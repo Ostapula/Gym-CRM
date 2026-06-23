@@ -9,6 +9,7 @@ import java.util.HashMap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TrainerDaoTest {
@@ -45,6 +46,12 @@ public class TrainerDaoTest {
         updated.setSpecialization(TrainingType.STRENGTH);
         trainerDao.update(updated);
         assertEquals(TrainingType.STRENGTH, trainerDao.selectById(1L).get().getSpecialization());
+    }
+
+    @Test
+    void updateMissingEntryThrows() {
+        Trainer missing = sampleTrainer(99L, "Missing.User");
+        assertThrows(IllegalArgumentException.class, () -> trainerDao.update(missing));
     }
 
     @Test
