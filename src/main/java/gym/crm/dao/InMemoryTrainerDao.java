@@ -56,4 +56,9 @@ public class InMemoryTrainerDao implements TrainerDao {
         log.info("Updated trainer with ID: {}", trainer.getUserId());
         return trainer;
     }
+
+    @Override
+    public boolean existsById(Long id) {
+        return trainerStorage.containsKey(id);
+    }
 }

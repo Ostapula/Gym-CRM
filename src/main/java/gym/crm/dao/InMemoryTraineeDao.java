@@ -62,4 +62,9 @@ public class InMemoryTraineeDao implements TraineeDao {
         traineeStorage.remove(id);
         log.info("Deleted trainee with ID: {}", id);
     }
+
+    @Override
+    public boolean existsById(Long id) {
+        return traineeStorage.containsKey(id);
+    }
 }
