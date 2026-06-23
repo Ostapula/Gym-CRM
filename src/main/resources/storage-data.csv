@@ -1,0 +1,10 @@
+# Formats (semicolon separated):
+#   TRAINEE;id;firstName;lastName;username;password;isActive;dateOfBirth(yyyy-MM-dd);address
+#   TRAINER;id;firstName;lastName;username;password;isActive;specialization
+#   TRAINING;id;traineeId;trainerId;trainingName;trainingType;trainingDate(yyyy-MM-dd);durationMinutes
+TRAINEE;1;John;Doe;John.Doe;qheJ1k0pLm;true;1990-05-14;221B Baker Street
+TRAINEE;2;Mary;Jane;Mary.Jane;Z9xTrp4QvA;true;1995-11-02;1600 Amphitheatre Pkwy
+TRAINER;1;Arnold;Strong;Arnold.Strong;Pa55w0rdXy;true;STRENGTH
+TRAINER;2;Lucy;Fit;Lucy.Fit;K3yb0ardZz;true;CARDIO
+TRAINING;1;1;1;Morning Strength;STRENGTH;2024-01-15;60
+TRAINING;2;2;2;Evening Cardio;CARDIO;2024-01-16;45
