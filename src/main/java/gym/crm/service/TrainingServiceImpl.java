@@ -1,5 +1,7 @@
 package gym.crm.service;
 
+import gym.crm.dao.TraineeDao;
+import gym.crm.dao.TrainerDao;
 import gym.crm.dao.TrainingDao;
 import gym.crm.model.Training;
 import gym.crm.model.TrainingType;
@@ -15,6 +17,8 @@ import java.util.Optional;
 @Service
 public class TrainingServiceImpl implements TrainingService {
     private TrainingDao trainingDao;
+    private TraineeDao traineeDao;
+    private TrainerDao trainerDao;
 
     private static final Logger log = LoggerFactory.getLogger(TrainingServiceImpl.class);
 
@@ -23,9 +27,25 @@ public class TrainingServiceImpl implements TrainingService {
         this.trainingDao = trainingDao;
     }
 
+    @Autowired
+    public void setTraineeDao(TraineeDao traineeDao) {
+        this.traineeDao = traineeDao;
+    }
+
+    @Autowired
+    public void setTrainerDao(TrainerDao trainerDao) {
+        this.trainerDao = trainerDao;
+    }
+
     @Override
     public Training createTraining(Long traineeId, Long trainerId, String trainingName,
                                    TrainingType trainingType, LocalDate trainingDate, int trainingDuration) {
+        if (!traineeDao.existsById(traineeId)) {
+            throw new IllegalArgumentException("Trainee not found: " + traineeId);
+        }
+        if (!trainerDao.existsById(trainerId)) {
+            throw new IllegalArgumentException("Trainer not found: " + trainerId);
+        }
         Long id = nextId();
         Training training = new Training(id, trainerId, traineeId, trainingName, trainingType, trainingDate, trainingDuration);
         log.info("Creating training id={} name={}", id, trainingName);

@@ -48,8 +48,17 @@ public class InMemoryTrainerDao implements TrainerDao {
 
     @Override
     public Trainer update(Trainer trainer) {
+        if (!trainerStorage.containsKey(trainer.getUserId())) {
+            log.warn("Cannot update trainer with ID: {} - record not found", trainer.getUserId());
+            throw new IllegalArgumentException("Trainer not found: " + trainer.getUserId());
+        }
         trainerStorage.put(trainer.getUserId(), trainer);
         log.info("Updated trainer with ID: {}", trainer.getUserId());
         return trainer;
+    }
+
+    @Override
+    public boolean existsById(Long id) {
+        return trainerStorage.containsKey(id);
     }
 }

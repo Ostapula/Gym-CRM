@@ -48,6 +48,10 @@ public class InMemoryTraineeDao implements TraineeDao {
 
     @Override
     public Trainee update(Trainee trainee) {
+        if (!traineeStorage.containsKey(trainee.getUserId())) {
+            log.warn("Cannot update trainee with ID: {} - record not found", trainee.getUserId());
+            throw new IllegalArgumentException("Trainee not found: " + trainee.getUserId());
+        }
         traineeStorage.put(trainee.getUserId(), trainee);
         log.info("Updated trainee with ID: {}", trainee.getUserId());
         return trainee;
@@ -57,5 +61,10 @@ public class InMemoryTraineeDao implements TraineeDao {
     public void delete(Long id) {
         traineeStorage.remove(id);
         log.info("Deleted trainee with ID: {}", id);
+    }
+
+    @Override
+    public boolean existsById(Long id) {
+        return traineeStorage.containsKey(id);
     }
 }

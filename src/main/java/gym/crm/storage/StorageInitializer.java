@@ -61,7 +61,6 @@ public class StorageInitializer implements BeanPostProcessor {
                 log.info("Initialized training storage with {} record(s)", trainings.size());
             }
             default -> {
-                log.error("Invalid bean name provided: {}", beanName);
             }
         }
         return bean;

@@ -15,4 +15,6 @@ public interface TrainerDao {
     List<Trainer> selectAll();
 
     Trainer update(Trainer trainer);
+
+    boolean existsById(Long id);
 }
