@@ -1,39 +1,35 @@
 package gym.crm.config;
 
-import gym.crm.model.Trainee;
-import gym.crm.model.Trainer;
-import gym.crm.model.Training;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.Persistence;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
-import java.util.HashMap;
-import java.util.Map;
-
+@Slf4j
 @Configuration
+@EnableTransactionManagement
 @ComponentScan(basePackages = "gym.crm")
 @PropertySource("classpath:application.properties")
 public class SpringConfig {
-
     @Bean
     public static PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer() {
         return new PropertySourcesPlaceholderConfigurer();
     }
 
-    @Bean
-    Map<Long, Trainee> traineeStorage() {
-        return new HashMap<>();
+    @Bean(destroyMethod = "close")
+    public EntityManagerFactory entityManagerFactory() {
+        return Persistence.createEntityManagerFactory("default");
     }
 
     @Bean
-    Map<Long, Trainer> trainerStorage() {
-        return new HashMap<>();
-    }
-
-    @Bean
-    Map<Long, Training> trainingStorage() {
-        return new HashMap<>();
+    public PlatformTransactionManager transactionManager(EntityManagerFactory entityManagerFactory) {
+        return new JpaTransactionManager(entityManagerFactory);
     }
 }

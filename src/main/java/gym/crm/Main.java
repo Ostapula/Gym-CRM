@@ -6,41 +6,41 @@ import gym.crm.model.Trainee;
 import gym.crm.model.Trainer;
 import gym.crm.model.Training;
 import gym.crm.model.TrainingType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import gym.crm.model.TrainingTypeEntity;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Set;
 
+@Slf4j
 public class Main {
-    private static final Logger log = LoggerFactory.getLogger(Main.class);
 
     public static void main(String[] args) {
         try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(SpringConfig.class)) {
+            GymFacade gym = context.getBean(GymFacade.class);
 
-            GymFacade facade = context.getBean(GymFacade.class);
+            List<TrainingTypeEntity> trainingTypes = gym.getAllTrainingTypes();
+            System.out.println("Training types: " + trainingTypes);
+            TrainingTypeEntity strength = gym.getTrainingType(TrainingType.STRENGTH);
+            TrainingTypeEntity cardio = gym.getTrainingType(TrainingType.CARDIO);
 
-            log.info("Trainees loaded from file: {}", facade.getAllTrainees().size());
-            log.info("Trainers loaded from file: {}", facade.getAllTrainers().size());
-            log.info("Trainings loaded from file: {}", facade.getAllTrainings().size());
+            Trainee trainee = gym.createTrainee(new Trainee("John", "Doe", null, null, true,
+                    "123 Main St", LocalDate.of(1990, 1, 1), Set.of(), Set.of()));
+            System.out.println("Created trainee: " + trainee.getUsername() + " / " + trainee.getPassword());
 
-            Trainee trainee = facade.createTrainee("John", "Doe", true,
-                    LocalDate.of(1992, 3, 4), "10 Downing Street");
-            log.info("Created trainee with id={}", trainee.getUserId());
+            Trainer trainer = gym.createTrainer(new Trainer("Ann", "Lee", null, null, true, strength));
+            System.out.println("Created trainer: " + trainer.getUsername() + " / " + trainer.getPassword());
 
-            Trainer trainer = facade.createTrainer("Sergey", "Power", true, TrainingType.CARDIO);
-            log.info("Created trainer with id={}", trainer.getUserId());
+            Training training = gym.addTraining(
+                    new Training(null, trainer, trainee, "Morning cardio", cardio, LocalDate.now(), 60),
+                    trainer.getUsername(), trainer.getPassword());
+            System.out.println("Created training: id=" + training.getId() + " name=" + training.getName());
 
-            Training training = facade.createTraining(trainee.getUserId(), trainer.getUserId(),
-                    "Intro Session", TrainingType.CARDIO, LocalDate.now(), 90);
-            log.info("Created training with id={}", training.getId());
-
-            trainee.setAddress("New Address 42");
-            facade.updateTrainee(trainee);
-            log.info("Updated trainee id={}", trainee.getUserId());
-
-            facade.deleteTrainee(trainee.getUserId());
-            log.info("Trainee present after delete: {}", facade.getTrainee(trainee.getUserId()).isPresent());
+            System.out.println(gym.getTrainee(trainee.getUsername(), trainee.getPassword()));
+            System.out.println(gym.getTrainer(trainer.getUsername(), trainer.getPassword()));
+            System.out.println("All trainings: " + gym.getAllTrainings(trainer.getUsername(), trainer.getPassword()));
         }
     }
 }
