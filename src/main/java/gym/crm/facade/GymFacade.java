@@ -4,85 +4,129 @@ import gym.crm.model.Trainee;
 import gym.crm.model.Trainer;
 import gym.crm.model.Training;
 import gym.crm.model.TrainingType;
+import gym.crm.model.TrainingTypeEntity;
 import gym.crm.service.TraineeService;
 import gym.crm.service.TrainerService;
 import gym.crm.service.TrainingService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import gym.crm.service.TrainingTypeService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Component
 public class GymFacade {
-    private static final Logger log = LoggerFactory.getLogger(GymFacade.class);
-
     private final TraineeService traineeService;
     private final TrainerService trainerService;
     private final TrainingService trainingService;
+    private final TrainingTypeService trainingTypeService;
 
-    @Autowired
-    public GymFacade(TraineeService traineeService,
-                     TrainerService trainerService,
-                     TrainingService trainingService) {
+    public GymFacade(TraineeService traineeService, TrainerService trainerService,
+                     TrainingService trainingService, TrainingTypeService trainingTypeService) {
         this.traineeService = traineeService;
         this.trainerService = trainerService;
         this.trainingService = trainingService;
-        log.info("GymFacade initialized with all domain services");
+        this.trainingTypeService = trainingTypeService;
     }
 
-    public Trainee createTrainee(String firstName, String lastName, boolean isActive,
-                                 LocalDate dateOfBirth, String address) {
-        return traineeService.createTraineeProfile(firstName, lastName, isActive, address, dateOfBirth);
+    public Trainee createTrainee(Trainee trainee) {
+        return traineeService.createTraineeProfile(trainee);
+    }
+
+    public boolean authenticateTrainee(String username, String password) {
+        return traineeService.credentialsMatchTrainee(username, password);
+    }
+
+    public Optional<Trainee> getTrainee(String username, String password) {
+        return traineeService.getTraineeByUsername(username, password);
     }
 
     public Trainee updateTrainee(Trainee trainee) {
-        return traineeService.updateTrainee(trainee);
+        return traineeService.updateTraineeProfile(trainee);
     }
 
-    public void deleteTrainee(Long id) {
-        traineeService.deleteTrainee(id);
+    public Trainee changeTraineePassword(String username, String oldPassword, String newPassword) {
+        return traineeService.changePasswordTrainee(username, oldPassword, newPassword);
     }
 
-    public Optional<Trainee> getTrainee(Long id) {
-        return traineeService.getTrainee(id);
+    public void activateTrainee(String username, String password) {
+        traineeService.activateTraineeProfile(username, password);
     }
 
-    public List<Trainee> getAllTrainees() {
-        return traineeService.getAllTrainees();
+    public void deactivateTrainee(String username, String password) {
+        traineeService.deactivateTraineeProfile(username, password);
     }
 
-    public Trainer createTrainer(String firstName, String lastName, boolean isActive,
-                                 TrainingType specialization) {
-        return trainerService.createTrainerProfile(firstName, lastName, isActive, specialization);
+    public void deleteTrainee(String username, String password) {
+        traineeService.deleteTraineeProfile(username, password);
+    }
+
+    public Trainee updateTraineeTrainers(Trainee trainee) {
+        return traineeService.updateTraineesTrainerList(trainee);
+    }
+
+    public List<Trainee> getAllTrainees(String username, String password) {
+        return traineeService.getAllTrainees(username, password);
+    }
+
+    public List<Training> getTraineeTrainings(String username, String password, LocalDate fromDate, LocalDate toDate,
+                                              String trainerName, TrainingType trainingType) {
+        return traineeService.getTrainingsByUsername(username, password, fromDate, toDate, trainerName, trainingType);
+    }
+
+    public Trainer createTrainer(Trainer trainer) {
+        return trainerService.createTrainerProfile(trainer);
+    }
+
+    public boolean authenticateTrainer(String username, String password) {
+        return trainerService.credentialsMatchTrainer(username, password);
+    }
+
+    public Optional<Trainer> getTrainer(String username, String password) {
+        return trainerService.getTrainerByUsername(username, password);
     }
 
     public Trainer updateTrainer(Trainer trainer) {
-        return trainerService.updateTrainer(trainer);
+        return trainerService.updateTrainerProfile(trainer);
     }
 
-    public Optional<Trainer> getTrainer(Long id) {
-        return trainerService.getTrainer(id);
+    public Trainer changeTrainerPassword(String username, String oldPassword, String newPassword) {
+        return trainerService.changePasswordTrainer(username, oldPassword, newPassword);
     }
 
-    public List<Trainer> getAllTrainers() {
-        return trainerService.getAllTrainers();
+    public void activateTrainer(String username, String password) {
+        trainerService.activateTrainerProfile(username, password);
     }
 
-    public Training createTraining(Long traineeId, Long trainerId, String trainingName,
-                                   TrainingType trainingType, LocalDate trainingDate, int trainingDuration) {
-        return trainingService.createTraining(traineeId, trainerId, trainingName, trainingType,
-                trainingDate, trainingDuration);
+    public void deactivateTrainer(String username, String password) {
+        trainerService.deactivateTrainerProfile(username, password);
     }
 
-    public Optional<Training> getTraining(Long id) {
-        return trainingService.getTraining(id);
+    public List<Trainer> getTrainersNotAssignedToTrainee(String traineeUsername, String traineePassword) {
+        return trainerService.getTrainersNotAssignedToTraineeByUsername(traineeUsername, traineePassword);
     }
 
-    public List<Training> getAllTrainings() {
-        return trainingService.getAllTrainings();
+    public List<Training> getTrainerTrainings(String username, String password, LocalDate fromDate, LocalDate toDate,
+                                              String traineeName) {
+        return trainerService.getTrainingsByUsername(username, password, fromDate, toDate, traineeName);
+    }
+
+    public Training addTraining(Training training, String trainerUsername, String trainerPassword) {
+        return trainingService.createTraining(training, trainerUsername, trainerPassword);
+    }
+
+    public List<Training> getAllTrainings(String trainerUsername, String trainerPassword) {
+        return trainingService.getAllTrainings(trainerUsername, trainerPassword);
+    }
+
+    public TrainingTypeEntity getTrainingType(TrainingType type) {
+        return trainingTypeService.getByType(type);
+    }
+
+    public List<TrainingTypeEntity> getAllTrainingTypes() {
+        return trainingTypeService.getAll();
     }
 }
