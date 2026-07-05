@@ -60,10 +60,7 @@ public class TraineeRepositoryImpl implements TraineeRepository {
     public Optional<Trainee> findByUsername(String username) {
         try {
             Trainee trainee = entityManager.createQuery(
-                            "SELECT t FROM Trainee t " +
-                                    "LEFT JOIN FETCH t.trainers " +
-                                    "LEFT JOIN FETCH t.trainings " +
-                                    "WHERE t.username = :username", Trainee.class)
+                            "SELECT t FROM Trainee t WHERE t.username = :username", Trainee.class)
                     .setParameter("username", username)
                     .getSingleResult();
             return Optional.of(trainee);
@@ -74,10 +71,7 @@ public class TraineeRepositoryImpl implements TraineeRepository {
 
     @Override
     public List<Trainee> findAll() {
-        return entityManager.createQuery(
-                        "SELECT DISTINCT t FROM Trainee t " +
-                                "LEFT JOIN FETCH t.trainers " +
-                                "LEFT JOIN FETCH t.trainings", Trainee.class)
+        return entityManager.createQuery("SELECT t FROM Trainee t", Trainee.class)
                 .getResultList();
     }
 

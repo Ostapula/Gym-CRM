@@ -53,10 +53,7 @@ public class TrainerRepositoryImpl implements TrainerRepository {
     public Optional<Trainer> findByUsername(String username) {
         try {
             Trainer trainer = entityManager.createQuery(
-                            "SELECT t FROM Trainer t " +
-                                    "LEFT JOIN FETCH t.trainees " +
-                                    "LEFT JOIN FETCH t.trainings " +
-                                    "WHERE t.username = :username", Trainer.class)
+                            "SELECT t FROM Trainer t WHERE t.username = :username", Trainer.class)
                     .setParameter("username", username)
                     .getSingleResult();
             return Optional.of(trainer);
@@ -122,10 +119,7 @@ public class TrainerRepositoryImpl implements TrainerRepository {
         }
 
         return entityManager.createQuery(
-                        "SELECT DISTINCT t FROM Trainer t " +
-                                "LEFT JOIN FETCH t.trainees " +
-                                "LEFT JOIN FETCH t.trainings " +
-                                "WHERE t.id NOT IN " +
+                        "SELECT t FROM Trainer t WHERE t.id NOT IN " +
                                 "(SELECT trn.id FROM Trainee tr JOIN tr.trainers trn WHERE tr.username = :traineeUsername)", Trainer.class)
                 .setParameter("traineeUsername", traineeUsername)
                 .getResultList();
