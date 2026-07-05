@@ -6,8 +6,12 @@ import gym.crm.model.TrainingType;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Root;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Answers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -33,6 +37,12 @@ class TraineeRepositoryImplTest {
     private TypedQuery<Long> longQuery;
     @Mock
     private TypedQuery<Training> trainingQuery;
+    @Mock
+    private CriteriaBuilder criteriaBuilder;
+    @Mock
+    private CriteriaQuery<Training> criteriaQuery;
+    @Mock(answer = Answers.RETURNS_DEEP_STUBS)
+    private Root<Training> trainingRoot;
     @InjectMocks
     private TraineeRepositoryImpl repository;
 
@@ -213,8 +223,11 @@ class TraineeRepositoryImplTest {
         when(entityManager.createQuery(anyString(), eq(Trainee.class))).thenReturn(traineeQuery);
         when(traineeQuery.setParameter("username", "John.Doe")).thenReturn(traineeQuery);
         when(traineeQuery.getSingleResult()).thenReturn(t);
-        when(entityManager.createQuery(anyString(), eq(Training.class))).thenReturn(trainingQuery);
-        when(trainingQuery.setParameter(anyString(), any())).thenReturn(trainingQuery);
+        when(entityManager.getCriteriaBuilder()).thenReturn(criteriaBuilder);
+        when(criteriaBuilder.createQuery(Training.class)).thenReturn(criteriaQuery);
+        when(criteriaQuery.from(Training.class)).thenReturn(trainingRoot);
+        when(criteriaQuery.select(trainingRoot)).thenReturn(criteriaQuery);
+        when(entityManager.createQuery(criteriaQuery)).thenReturn(trainingQuery);
         when(trainingQuery.getResultList()).thenReturn(List.of(mock(Training.class)));
 
         List<Training> result = repository.findTrainingsByUsername(

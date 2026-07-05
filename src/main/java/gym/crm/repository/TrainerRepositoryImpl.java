@@ -5,9 +5,14 @@ import gym.crm.model.Training;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -83,16 +88,27 @@ public class TrainerRepositoryImpl implements TrainerRepository {
             throw new IllegalArgumentException("Failed to find trainer with username " + username + " does not exist.");
         }
 
-        return entityManager.createQuery(
-                        "FROM Training t WHERE t.trainer.username = :username " +
-                                "AND (:fromDate IS NULL OR t.date >= :fromDate) " +
-                                "AND (:toDate IS NULL OR t.date <= :toDate) " +
-                                "AND (:traineeName IS NULL OR CONCAT(t.trainee.firstName, ' ', t.trainee.lastName) = :traineeName)", Training.class)
-                .setParameter("username", username)
-                .setParameter("fromDate", fromDate)
-                .setParameter("toDate", toDate)
-                .setParameter("traineeName", traineeName)
-                .getResultList();
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Training> query = cb.createQuery(Training.class);
+        Root<Training> training = query.from(Training.class);
+
+        List<Predicate> predicates = new ArrayList<>();
+        predicates.add(cb.equal(training.get("trainer").get("username"), username));
+        if (fromDate != null) {
+            predicates.add(cb.greaterThanOrEqualTo(training.get("date"), fromDate));
+        }
+        if (toDate != null) {
+            predicates.add(cb.lessThanOrEqualTo(training.get("date"), toDate));
+        }
+        if (traineeName != null) {
+            predicates.add(cb.equal(
+                    cb.concat(cb.concat(training.get("trainee").get("firstName"), " "),
+                            training.get("trainee").get("lastName")),
+                    traineeName));
+        }
+
+        query.select(training).where(predicates.toArray(new Predicate[0]));
+        return entityManager.createQuery(query).getResultList();
     }
 
     @Override

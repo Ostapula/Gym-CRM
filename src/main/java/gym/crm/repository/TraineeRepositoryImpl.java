@@ -6,9 +6,14 @@ import gym.crm.model.TrainingType;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -99,18 +104,30 @@ public class TraineeRepositoryImpl implements TraineeRepository {
             throw new IllegalArgumentException("Failed to find trainee with username " + username + " does not exist.");
         }
 
-        return entityManager.createQuery(
-                        "FROM Training t WHERE t.trainee.username = :username " +
-                                "AND (:fromDate IS NULL OR t.date >= :fromDate) " +
-                                "AND (:toDate IS NULL OR t.date <= :toDate) " +
-                                "AND (:trainerName IS NULL OR CONCAT(t.trainer.firstName, ' ', t.trainer.lastName) = :trainerName) " +
-                                "AND (:trainingType IS NULL OR t.trainingType.type = :trainingType)", Training.class)
-                .setParameter("username", username)
-                .setParameter("fromDate", fromDate)
-                .setParameter("toDate", toDate)
-                .setParameter("trainerName", trainerName)
-                .setParameter("trainingType", trainingType)
-                .getResultList();
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Training> query = cb.createQuery(Training.class);
+        Root<Training> training = query.from(Training.class);
+
+        List<Predicate> predicates = new ArrayList<>();
+        predicates.add(cb.equal(training.get("trainee").get("username"), username));
+        if (fromDate != null) {
+            predicates.add(cb.greaterThanOrEqualTo(training.get("date"), fromDate));
+        }
+        if (toDate != null) {
+            predicates.add(cb.lessThanOrEqualTo(training.get("date"), toDate));
+        }
+        if (trainerName != null) {
+            predicates.add(cb.equal(
+                    cb.concat(cb.concat(training.get("trainer").get("firstName"), " "),
+                            training.get("trainer").get("lastName")),
+                    trainerName));
+        }
+        if (trainingType != null) {
+            predicates.add(cb.equal(training.get("trainingType").get("type"), trainingType));
+        }
+
+        query.select(training).where(predicates.toArray(new Predicate[0]));
+        return entityManager.createQuery(query).getResultList();
     }
 
     @Override
