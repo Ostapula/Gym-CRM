@@ -1,11 +1,10 @@
 package gym.crm.service;
 
-import gym.crm.model.Training;
+import gym.crm.dto.TrainingDto;
 
 import java.util.List;
 
 public interface TrainingService {
-    Training createTraining(Training training, String trainerUsername, String trainerPassword);
-    List<Training> getAllTrainings(String trainerUsername, String trainerPassword);
+    TrainingDto createTraining(TrainingDto trainingDto, String trainerUsername, String trainerPassword);
+    List<TrainingDto> getAllTrainings(String trainerUsername, String trainerPassword);
 }
-

@@ -1,5 +1,7 @@
 package gym.crm.service;
 
+import gym.crm.dto.TrainingDto;
+import gym.crm.dto.TrainingMapper;
 import gym.crm.model.Training;
 import gym.crm.repository.TrainerRepository;
 import gym.crm.repository.TrainingRepository;
@@ -16,26 +18,31 @@ import java.util.Objects;
 public class TrainingServiceImpl implements TrainingService {
     private final TrainingRepository trainingRepository;
     private final TrainerRepository trainerRepository;
+    private final TrainingMapper trainingMapper;
 
-    public TrainingServiceImpl(TrainingRepository trainingRepository, TrainerRepository trainerRepository) {
+    public TrainingServiceImpl(TrainingRepository trainingRepository, TrainerRepository trainerRepository,
+                               TrainingMapper trainingMapper) {
         this.trainingRepository = trainingRepository;
         this.trainerRepository = trainerRepository;
+        this.trainingMapper = trainingMapper;
     }
 
     @Override
-    public Training createTraining(Training training, String trainerUsername, String trainerPassword) {
+    public TrainingDto createTraining(TrainingDto trainingDto, String trainerUsername, String trainerPassword) {
         requireAuthenticatedTrainer(trainerUsername, trainerPassword);
-        validateCreate(training);
-        log.info("Creating training name={}", training.getName());
-        return trainingRepository.save(training);
+        validateCreate(trainingDto);
+        log.info("Creating training name={}", trainingDto.getName());
+        Training training = trainingMapper.toEntity(trainingDto);
+        Training saved = trainingRepository.save(training);
+        return trainingMapper.toDto(saved);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<Training> getAllTrainings(String trainerUsername, String trainerPassword) {
+    public List<TrainingDto> getAllTrainings(String trainerUsername, String trainerPassword) {
         requireAuthenticatedTrainer(trainerUsername, trainerPassword);
         log.info("Getting all trainings");
-        return trainingRepository.findAllTrainings();
+        return trainingMapper.toDtoList(trainingRepository.findAllTrainings());
     }
 
     private void requireAuthenticatedTrainer(String username, String password) {
@@ -44,18 +51,19 @@ public class TrainingServiceImpl implements TrainingService {
         }
     }
 
-    private void validateCreate(Training training) {
-        Objects.requireNonNull(training, "Training is required");
-        if (training.getName() == null || training.getName().isBlank()) {
+    private void validateCreate(TrainingDto trainingDto) {
+        Objects.requireNonNull(trainingDto, "TrainingDto is required");
+        if (trainingDto.getName() == null || trainingDto.getName().isBlank()) {
             throw new IllegalArgumentException("name is required");
         }
-        Objects.requireNonNull(training.getDate(), "date is required");
-        if (training.getDuration() <= 0) {
+        Objects.requireNonNull(trainingDto.getDate(), "date is required");
+        if (trainingDto.getDuration() <= 0) {
             throw new IllegalArgumentException("duration must be greater than 0");
         }
-        Objects.requireNonNull(training.getTrainer(), "trainer is required");
-        Objects.requireNonNull(training.getTrainee(), "trainee is required");
-        Objects.requireNonNull(training.getTrainingType(), "trainingType is required");
+        Objects.requireNonNull(trainingDto.getTrainerId(), "trainer is required");
+        Objects.requireNonNull(trainingDto.getTraineeId(), "trainee is required");
+        if (trainingDto.getTrainingTypeId() == null && trainingDto.getTrainingType() == null) {
+            throw new NullPointerException("trainingType is required");
+        }
     }
 }
-

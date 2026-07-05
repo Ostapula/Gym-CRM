@@ -10,7 +10,7 @@ import java.util.Set;
 @ToString
 @Entity
 @Table(name = "trainers")
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 @PrimaryKeyJoinColumn(name = "id")
 public class Trainer extends User {
     @ManyToOne(fetch = FetchType.EAGER)

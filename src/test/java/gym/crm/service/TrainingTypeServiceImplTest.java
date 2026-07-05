@@ -1,12 +1,16 @@
 package gym.crm.service;
 
+import gym.crm.dto.TrainingTypeEntityDto;
+import gym.crm.dto.TrainingTypeMapper;
 import gym.crm.model.TrainingType;
 import gym.crm.model.TrainingTypeEntity;
 import gym.crm.repository.TrainingTypeRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mapstruct.factory.Mappers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
@@ -19,22 +23,23 @@ import static org.mockito.Mockito.when;
 class TrainingTypeServiceImplTest {
     @Mock
     private TrainingTypeRepository repository;
+    @Spy
+    private TrainingTypeMapper mapper = Mappers.getMapper(TrainingTypeMapper.class);
     @InjectMocks
     private TrainingTypeServiceImpl service;
 
     private TrainingTypeEntity entity(TrainingType type) {
-        TrainingTypeEntity tt = new TrainingTypeEntity();
-        tt.setId(1);
-        tt.setType(type);
-        return tt;
+        return new TrainingTypeEntity(1, type);
     }
 
     @Test
     void getByTypeReturnsConfiguredEntity() {
-        TrainingTypeEntity tt = entity(TrainingType.STRENGTH);
-        when(repository.findByType(TrainingType.STRENGTH)).thenReturn(Optional.of(tt));
+        when(repository.findByType(TrainingType.STRENGTH)).thenReturn(Optional.of(entity(TrainingType.STRENGTH)));
 
-        assertSame(tt, service.getByType(TrainingType.STRENGTH));
+        TrainingTypeEntityDto result = service.getByType(TrainingType.STRENGTH);
+
+        assertEquals(1, result.getId());
+        assertEquals(TrainingType.STRENGTH, result.getType());
     }
 
     @Test
@@ -53,6 +58,9 @@ class TrainingTypeServiceImplTest {
     void getAllDelegatesToRepository() {
         when(repository.findAll()).thenReturn(List.of(entity(TrainingType.CARDIO), entity(TrainingType.CIRCUIT)));
 
-        assertEquals(2, service.getAll().size());
+        List<TrainingTypeEntityDto> result = service.getAll();
+
+        assertEquals(2, result.size());
+        assertEquals(TrainingType.CARDIO, result.get(0).getType());
     }
 }

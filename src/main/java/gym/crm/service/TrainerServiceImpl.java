@@ -1,8 +1,10 @@
 package gym.crm.service;
 
-import gym.crm.model.Trainee;
+import gym.crm.dto.TrainerDto;
+import gym.crm.dto.TrainerMapper;
+import gym.crm.dto.TrainingDto;
+import gym.crm.dto.TrainingMapper;
 import gym.crm.model.Trainer;
-import gym.crm.model.Training;
 import gym.crm.repository.TraineeRepository;
 import gym.crm.repository.TrainerRepository;
 import gym.crm.util.CredentialsGenerator;
@@ -22,24 +24,31 @@ public class TrainerServiceImpl implements TrainerService {
     private final TrainerRepository trainerRepository;
     private final TraineeRepository traineeRepository;
     private final CredentialsGenerator credentialsGenerator;
+    private final TrainerMapper trainerMapper;
+    private final TrainingMapper trainingMapper;
 
     public TrainerServiceImpl(TrainerRepository trainerRepository, TraineeRepository traineeRepository,
-                              CredentialsGenerator credentialsGenerator) {
+                              CredentialsGenerator credentialsGenerator, TrainerMapper trainerMapper,
+                              TrainingMapper trainingMapper) {
         this.trainerRepository = trainerRepository;
         this.traineeRepository = traineeRepository;
         this.credentialsGenerator = credentialsGenerator;
+        this.trainerMapper = trainerMapper;
+        this.trainingMapper = trainingMapper;
     }
 
     @Override
-    public Trainer createTrainerProfile(Trainer trainer) {
-        validateCreate(trainer);
-        String username = credentialsGenerator.generateUsername(trainer.getFirstName(), trainer.getLastName(),
+    public TrainerDto createTrainerProfile(TrainerDto trainerDto) {
+        validateCreate(trainerDto);
+        String username = credentialsGenerator.generateUsername(trainerDto.getFirstName(), trainerDto.getLastName(),
                 t -> trainerRepository.findByUsername(t).isPresent());
         String password = credentialsGenerator.generatePassword();
-        trainer.setUsername(username);
-        trainer.setPassword(password);
+        trainerDto.setUsername(username);
+        trainerDto.setPassword(password);
         log.info("Creating trainer profile username={}", username);
-        return trainerRepository.create(trainer);
+        Trainer trainer = trainerMapper.toEntity(trainerDto);
+        Trainer created = trainerRepository.create(trainer);
+        return trainerMapper.toDto(created);
     }
 
     @Override
@@ -56,36 +65,39 @@ public class TrainerServiceImpl implements TrainerService {
     }
 
     @Override
-    public Trainer updateTrainerProfile(Trainer trainer) {
-        validateUpdate(trainer);
-        if (credentialsMatchTrainer(trainer.getUsername(), trainer.getPassword())) {
-            log.info("Updating trainer profile username={}", trainer.getUsername());
-            return trainerRepository.update(trainer);
+    public TrainerDto updateTrainerProfile(TrainerDto trainerDto) {
+        validateUpdate(trainerDto);
+        if (credentialsMatchTrainer(trainerDto.getUsername(), trainerDto.getPassword())) {
+            log.info("Updating trainer profile username={}", trainerDto.getUsername());
+            Trainer trainer = trainerMapper.toEntity(trainerDto);
+            Trainer updated = trainerRepository.update(trainer);
+            return trainerMapper.toDto(updated);
         }
-        log.info("Can't update trainer profile. Credentials do not match trainer username={}", trainer.getUsername());
+        log.info("Can't update trainer profile. Credentials do not match trainer username={}", trainerDto.getUsername());
         return null;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<Trainer> getTrainerByUsername(String username, String password) {
+    public Optional<TrainerDto> getTrainerByUsername(String username, String password) {
         Trainer trainer = trainerRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("Username " + username + " does not exist"));
 
         if (!trainer.getPassword().equals(password)) {
             throw new IllegalArgumentException("Authentication failed. Wrong password.");
         }
-        return Optional.of(trainer);
+        return Optional.of(trainerMapper.toDto(trainer));
     }
 
     @Override
-    public Trainer changePasswordTrainer(String username, String oldPassword, String newPassword) {
+    public TrainerDto changePasswordTrainer(String username, String oldPassword, String newPassword) {
         requireText(username, "username");
         requireText(oldPassword, "oldPassword");
         requireText(newPassword, "newPassword");
         requireAuthenticatedTrainer(username, oldPassword);
         log.info("Changing password for trainer username={}", username);
-        return trainerRepository.changePassword(username, newPassword);
+        Trainer trainer = trainerRepository.changePassword(username, newPassword);
+        return trainerMapper.toDto(trainer);
     }
 
     @Override
@@ -114,12 +126,12 @@ public class TrainerServiceImpl implements TrainerService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Training> getTrainingsByUsername(String username, String password, LocalDate fromDate, LocalDate toDate,
-                                                 String traineeName) {
+    public List<TrainingDto> getTrainingsByUsername(String username, String password, LocalDate fromDate, LocalDate toDate,
+                                                    String traineeName) {
         requireAuthenticatedTrainer(username, password);
         if (trainerRepository.findByUsername(username).isPresent()) {
             log.info("Getting trainings for trainer username={}", username);
-            return trainerRepository.findTrainingsByUsername(username, fromDate, toDate, traineeName);
+            return trainingMapper.toDtoList(trainerRepository.findTrainingsByUsername(username, fromDate, toDate, traineeName));
         }
         log.info("Can't get trainings. Trainer not found username={}", username);
         return List.of();
@@ -127,12 +139,12 @@ public class TrainerServiceImpl implements TrainerService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Trainer> getTrainersNotAssignedToTraineeByUsername(String traineeUsername, String traineePassword) {
+    public List<TrainerDto> getTrainersNotAssignedToTraineeByUsername(String traineeUsername, String traineePassword) {
         if (!traineeRepository.credentialsMatch(traineeUsername, traineePassword)) {
             throw new IllegalArgumentException("Authentication failed for trainee username=" + traineeUsername);
         }
         log.info("Getting trainers not assigned to trainee username={}", traineeUsername);
-        return trainerRepository.findTrainersNotAssignedToTraineeByUsername(traineeUsername);
+        return trainerMapper.toDtoList(trainerRepository.findTrainersNotAssignedToTraineeByUsername(traineeUsername));
     }
 
     private void requireAuthenticatedTrainer(String username, String password) {
@@ -141,18 +153,20 @@ public class TrainerServiceImpl implements TrainerService {
         }
     }
 
-    private void validateCreate(Trainer trainer) {
-        Objects.requireNonNull(trainer, "Trainer is required");
-        requireText(trainer.getFirstName(), "firstName");
-        requireText(trainer.getLastName(), "lastName");
-        Objects.requireNonNull(trainer.getSpecialization(), "specialization is required");
+    private void validateCreate(TrainerDto trainerDto) {
+        Objects.requireNonNull(trainerDto, "TrainerDto is required");
+        requireText(trainerDto.getFirstName(), "firstName");
+        requireText(trainerDto.getLastName(), "lastName");
+        if (trainerDto.getSpecializationId() == null && trainerDto.getSpecializationType() == null) {
+            throw new NullPointerException("specialization is required");
+        }
     }
 
-    private void validateUpdate(Trainer trainer) {
-        validateCreate(trainer);
-        Objects.requireNonNull(trainer.getId(), "id is required for update");
-        requireText(trainer.getUsername(), "username");
-        requireText(trainer.getPassword(), "password");
+    private void validateUpdate(TrainerDto trainerDto) {
+        validateCreate(trainerDto);
+        Objects.requireNonNull(trainerDto.getId(), "id is required for update");
+        requireText(trainerDto.getUsername(), "username");
+        requireText(trainerDto.getPassword(), "password");
     }
 
     private void requireText(String value, String fieldName) {
@@ -161,4 +175,3 @@ public class TrainerServiceImpl implements TrainerService {
         }
     }
 }
-

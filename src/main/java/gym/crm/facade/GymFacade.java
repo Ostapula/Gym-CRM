@@ -1,10 +1,10 @@
 package gym.crm.facade;
 
-import gym.crm.model.Trainee;
-import gym.crm.model.Trainer;
-import gym.crm.model.Training;
+import gym.crm.dto.TraineeDto;
+import gym.crm.dto.TrainerDto;
+import gym.crm.dto.TrainingDto;
+import gym.crm.dto.TrainingTypeEntityDto;
 import gym.crm.model.TrainingType;
-import gym.crm.model.TrainingTypeEntity;
 import gym.crm.service.TraineeService;
 import gym.crm.service.TrainerService;
 import gym.crm.service.TrainingService;
@@ -32,23 +32,23 @@ public class GymFacade {
         this.trainingTypeService = trainingTypeService;
     }
 
-    public Trainee createTrainee(Trainee trainee) {
-        return traineeService.createTraineeProfile(trainee);
+    public TraineeDto createTrainee(TraineeDto traineeDto) {
+        return traineeService.createTraineeProfile(traineeDto);
     }
 
     public boolean authenticateTrainee(String username, String password) {
         return traineeService.credentialsMatchTrainee(username, password);
     }
 
-    public Optional<Trainee> getTrainee(String username, String password) {
+    public Optional<TraineeDto> getTrainee(String username, String password) {
         return traineeService.getTraineeByUsername(username, password);
     }
 
-    public Trainee updateTrainee(Trainee trainee) {
-        return traineeService.updateTraineeProfile(trainee);
+    public TraineeDto updateTrainee(TraineeDto traineeDto) {
+        return traineeService.updateTraineeProfile(traineeDto);
     }
 
-    public Trainee changeTraineePassword(String username, String oldPassword, String newPassword) {
+    public TraineeDto changeTraineePassword(String username, String oldPassword, String newPassword) {
         return traineeService.changePasswordTrainee(username, oldPassword, newPassword);
     }
 
@@ -64,36 +64,36 @@ public class GymFacade {
         traineeService.deleteTraineeProfile(username, password);
     }
 
-    public Trainee updateTraineeTrainers(Trainee trainee) {
-        return traineeService.updateTraineesTrainerList(trainee);
+    public TraineeDto updateTraineeTrainers(TraineeDto traineeDto) {
+        return traineeService.updateTraineesTrainerList(traineeDto);
     }
 
-    public List<Trainee> getAllTrainees(String username, String password) {
+    public List<TraineeDto> getAllTrainees(String username, String password) {
         return traineeService.getAllTrainees(username, password);
     }
 
-    public List<Training> getTraineeTrainings(String username, String password, LocalDate fromDate, LocalDate toDate,
-                                              String trainerName, TrainingType trainingType) {
+    public List<TrainingDto> getTraineeTrainings(String username, String password, LocalDate fromDate, LocalDate toDate,
+                                                 String trainerName, TrainingType trainingType) {
         return traineeService.getTrainingsByUsername(username, password, fromDate, toDate, trainerName, trainingType);
     }
 
-    public Trainer createTrainer(Trainer trainer) {
-        return trainerService.createTrainerProfile(trainer);
+    public TrainerDto createTrainer(TrainerDto trainerDto) {
+        return trainerService.createTrainerProfile(trainerDto);
     }
 
     public boolean authenticateTrainer(String username, String password) {
         return trainerService.credentialsMatchTrainer(username, password);
     }
 
-    public Optional<Trainer> getTrainer(String username, String password) {
+    public Optional<TrainerDto> getTrainer(String username, String password) {
         return trainerService.getTrainerByUsername(username, password);
     }
 
-    public Trainer updateTrainer(Trainer trainer) {
-        return trainerService.updateTrainerProfile(trainer);
+    public TrainerDto updateTrainer(TrainerDto trainerDto) {
+        return trainerService.updateTrainerProfile(trainerDto);
     }
 
-    public Trainer changeTrainerPassword(String username, String oldPassword, String newPassword) {
+    public TrainerDto changeTrainerPassword(String username, String oldPassword, String newPassword) {
         return trainerService.changePasswordTrainer(username, oldPassword, newPassword);
     }
 
@@ -105,28 +105,28 @@ public class GymFacade {
         trainerService.deactivateTrainerProfile(username, password);
     }
 
-    public List<Trainer> getTrainersNotAssignedToTrainee(String traineeUsername, String traineePassword) {
+    public List<TrainerDto> getTrainersNotAssignedToTrainee(String traineeUsername, String traineePassword) {
         return trainerService.getTrainersNotAssignedToTraineeByUsername(traineeUsername, traineePassword);
     }
 
-    public List<Training> getTrainerTrainings(String username, String password, LocalDate fromDate, LocalDate toDate,
-                                              String traineeName) {
+    public List<TrainingDto> getTrainerTrainings(String username, String password, LocalDate fromDate, LocalDate toDate,
+                                                 String traineeName) {
         return trainerService.getTrainingsByUsername(username, password, fromDate, toDate, traineeName);
     }
 
-    public Training addTraining(Training training, String trainerUsername, String trainerPassword) {
-        return trainingService.createTraining(training, trainerUsername, trainerPassword);
+    public TrainingDto addTraining(TrainingDto trainingDto, String trainerUsername, String trainerPassword) {
+        return trainingService.createTraining(trainingDto, trainerUsername, trainerPassword);
     }
 
-    public List<Training> getAllTrainings(String trainerUsername, String trainerPassword) {
+    public List<TrainingDto> getAllTrainings(String trainerUsername, String trainerPassword) {
         return trainingService.getAllTrainings(trainerUsername, trainerPassword);
     }
 
-    public TrainingTypeEntity getTrainingType(TrainingType type) {
+    public TrainingTypeEntityDto getTrainingType(TrainingType type) {
         return trainingTypeService.getByType(type);
     }
 
-    public List<TrainingTypeEntity> getAllTrainingTypes() {
+    public List<TrainingTypeEntityDto> getAllTrainingTypes() {
         return trainingTypeService.getAll();
     }
 }

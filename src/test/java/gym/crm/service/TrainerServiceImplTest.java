@@ -1,5 +1,9 @@
 package gym.crm.service;
 
+import gym.crm.dto.TrainerDto;
+import gym.crm.dto.TrainerMapper;
+import gym.crm.dto.TrainingDto;
+import gym.crm.dto.TrainingMapper;
 import gym.crm.model.Trainer;
 import gym.crm.model.Training;
 import gym.crm.model.TrainingType;
@@ -9,10 +13,14 @@ import gym.crm.repository.TrainerRepository;
 import gym.crm.util.CredentialsGenerator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mapstruct.factory.Mappers;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -29,14 +37,20 @@ class TrainerServiceImplTest {
     private TraineeRepository traineeRepository;
     @Mock
     private CredentialsGenerator credentialsGenerator;
+    @Spy
+    private TrainerMapper trainerMapper = Mappers.getMapper(TrainerMapper.class);
+    @Spy
+    private TrainingMapper trainingMapper = Mappers.getMapper(TrainingMapper.class);
     @InjectMocks
     private TrainerServiceImpl service;
 
     private TrainingTypeEntity type() {
-        TrainingTypeEntity tt = new TrainingTypeEntity();
-        tt.setId(1);
-        tt.setType(TrainingType.CARDIO);
-        return tt;
+        return new TrainingTypeEntity(1, TrainingType.CARDIO);
+    }
+
+    private TrainerDto trainerDto(String username, String password, boolean active) {
+        return new TrainerDto(2L, "Ann", "Lee", username, password, active,
+                1, TrainingType.CARDIO, Set.of(), Set.of());
     }
 
     private Trainer trainer(String username, String password, boolean active) {
@@ -49,22 +63,29 @@ class TrainerServiceImplTest {
 
     @Test
     void createGeneratesCredentialsAndPersists() {
-        Trainer input = trainer(null, null, true);
+        TrainerDto input = trainerDto(null, null, true);
         when(credentialsGenerator.generateUsername(eq("Ann"), eq("Lee"), any())).thenReturn("Ann.Lee");
         when(credentialsGenerator.generatePassword()).thenReturn("genpass123");
         when(trainerRepository.create(any(Trainer.class))).thenAnswer(i -> i.getArgument(0));
 
-        Trainer result = service.createTrainerProfile(input);
+        TrainerDto result = service.createTrainerProfile(input);
 
         assertEquals("Ann.Lee", result.getUsername());
         assertEquals("genpass123", result.getPassword());
-        verify(trainerRepository).create(input);
+        ArgumentCaptor<Trainer> captor = ArgumentCaptor.forClass(Trainer.class);
+        verify(trainerRepository).create(captor.capture());
+        Trainer persisted = captor.getValue();
+        assertEquals("Ann.Lee", persisted.getUsername());
+        assertEquals("genpass123", persisted.getPassword());
+        assertEquals(1, persisted.getSpecialization().getId());
+        assertEquals(TrainingType.CARDIO, persisted.getSpecialization().getType());
     }
 
     @Test
     void createRejectsMissingSpecialization() {
-        Trainer input = trainer(null, null, true);
-        input.setSpecialization(null);
+        TrainerDto input = trainerDto(null, null, true);
+        input.setSpecializationId(null);
+        input.setSpecializationType(null);
         assertThrows(NullPointerException.class, () -> service.createTrainerProfile(input));
         verifyNoInteractions(trainerRepository);
     }
@@ -86,12 +107,12 @@ class TrainerServiceImplTest {
 
     @Test
     void changePasswordAuthenticatesWithOldAndStoresNew() {
-        Trainer t = trainer("Ann.Lee", "old", true);
-        when(trainerRepository.findByUsername("Ann.Lee")).thenReturn(Optional.of(t));
-        when(trainerRepository.changePassword("Ann.Lee", "new")).thenReturn(t);
+        when(trainerRepository.findByUsername("Ann.Lee")).thenReturn(Optional.of(trainer("Ann.Lee", "old", true)));
+        when(trainerRepository.changePassword("Ann.Lee", "new")).thenReturn(trainer("Ann.Lee", "new", true));
 
-        service.changePasswordTrainer("Ann.Lee", "old", "new");
+        TrainerDto result = service.changePasswordTrainer("Ann.Lee", "old", "new");
 
+        assertEquals("new", result.getPassword());
         verify(trainerRepository).changePassword("Ann.Lee", "new");
     }
 
@@ -123,7 +144,10 @@ class TrainerServiceImplTest {
         when(trainerRepository.findTrainersNotAssignedToTraineeByUsername("john"))
                 .thenReturn(List.of(trainer("Ann.Lee", "p", true)));
 
-        assertEquals(1, service.getTrainersNotAssignedToTraineeByUsername("john", "pass").size());
+        List<TrainerDto> result = service.getTrainersNotAssignedToTraineeByUsername("john", "pass");
+
+        assertEquals(1, result.size());
+        assertEquals("Ann.Lee", result.get(0).getUsername());
     }
 
     @Test
@@ -136,33 +160,42 @@ class TrainerServiceImplTest {
 
     @Test
     void updateProfileSucceedsWhenAuthenticated() {
-        Trainer t = trainer("Ann.Lee", "pass", true);
-        when(trainerRepository.findByUsername("Ann.Lee")).thenReturn(Optional.of(t));
-        when(trainerRepository.update(t)).thenReturn(t);
+        TrainerDto dto = trainerDto("Ann.Lee", "pass", true);
+        when(trainerRepository.findByUsername("Ann.Lee")).thenReturn(Optional.of(trainer("Ann.Lee", "pass", true)));
+        when(trainerRepository.update(any(Trainer.class))).thenAnswer(i -> i.getArgument(0));
 
-        assertSame(t, service.updateTrainerProfile(t));
-        verify(trainerRepository).update(t);
+        TrainerDto result = service.updateTrainerProfile(dto);
+
+        assertNotNull(result);
+        assertEquals("Ann.Lee", result.getUsername());
+        verify(trainerRepository).update(any(Trainer.class));
     }
 
     @Test
     void updateProfileReturnsNullWhenAuthFails() {
-        Trainer stored = trainer("Ann.Lee", "realpass", true);
-        Trainer t = trainer("Ann.Lee", "wrongpass", true);
-        when(trainerRepository.findByUsername("Ann.Lee")).thenReturn(Optional.of(stored));
+        TrainerDto dto = trainerDto("Ann.Lee", "wrongpass", true);
+        when(trainerRepository.findByUsername("Ann.Lee")).thenReturn(Optional.of(trainer("Ann.Lee", "realpass", true)));
 
-        assertNull(service.updateTrainerProfile(t));
+        assertNull(service.updateTrainerProfile(dto));
         verify(trainerRepository, never()).update(any());
     }
 
     @Test
     void getByUsernameReturnsTrainerWhenAuthenticated() {
-        Trainer t = trainer("Ann.Lee", "pass", true);
-        when(trainerRepository.findByUsername("Ann.Lee")).thenReturn(Optional.of(t));
+        when(trainerRepository.findByUsername("Ann.Lee")).thenReturn(Optional.of(trainer("Ann.Lee", "pass", true)));
 
-        Optional<Trainer> result = service.getTrainerByUsername("Ann.Lee", "pass");
+        Optional<TrainerDto> result = service.getTrainerByUsername("Ann.Lee", "pass");
 
         assertTrue(result.isPresent());
-        assertSame(t, result.get());
+        assertEquals("Ann.Lee", result.get().getUsername());
+        assertEquals(TrainingType.CARDIO, result.get().getSpecializationType());
+    }
+
+    @Test
+    void getByUsernameThrowsWhenPasswordWrong() {
+        when(trainerRepository.findByUsername("Ann.Lee")).thenReturn(Optional.of(trainer("Ann.Lee", "pass", true)));
+
+        assertThrows(IllegalArgumentException.class, () -> service.getTrainerByUsername("Ann.Lee", "wrong"));
     }
 
     @Test
@@ -176,11 +209,17 @@ class TrainerServiceImplTest {
 
     @Test
     void getTrainingsDelegatesToRepository() {
-        Trainer t = trainer("Ann.Lee", "pass", true);
-        List<Training> list = List.of(mock(Training.class));
-        when(trainerRepository.findByUsername("Ann.Lee")).thenReturn(Optional.of(t));
-        when(trainerRepository.findTrainingsByUsername("Ann.Lee", null, null, "John Doe")).thenReturn(list);
+        Training training = new Training(5L, trainer("Ann.Lee", "pass", true), null,
+                "Morning cardio", type(), LocalDate.of(2024, 1, 1), 60);
+        when(trainerRepository.findByUsername("Ann.Lee")).thenReturn(Optional.of(trainer("Ann.Lee", "pass", true)));
+        when(trainerRepository.findTrainingsByUsername("Ann.Lee", null, null, "John Doe"))
+                .thenReturn(List.of(training));
 
-        assertEquals(list, service.getTrainingsByUsername("Ann.Lee", "pass", null, null, "John Doe"));
+        List<TrainingDto> result = service.getTrainingsByUsername("Ann.Lee", "pass", null, null, "John Doe");
+
+        assertEquals(1, result.size());
+        assertEquals(5L, result.get(0).getId());
+        assertEquals(2L, result.get(0).getTrainerId());
+        assertEquals(TrainingType.CARDIO, result.get(0).getTrainingType());
     }
 }

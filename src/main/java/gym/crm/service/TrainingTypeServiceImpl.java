@@ -1,5 +1,7 @@
 package gym.crm.service;
 
+import gym.crm.dto.TrainingTypeEntityDto;
+import gym.crm.dto.TrainingTypeMapper;
 import gym.crm.model.TrainingType;
 import gym.crm.model.TrainingTypeEntity;
 import gym.crm.repository.TrainingTypeRepository;
@@ -15,20 +17,23 @@ import java.util.Objects;
 @Transactional(readOnly = true)
 public class TrainingTypeServiceImpl implements TrainingTypeService {
     private final TrainingTypeRepository trainingTypeRepository;
+    private final TrainingTypeMapper trainingTypeMapper;
 
-    public TrainingTypeServiceImpl(TrainingTypeRepository trainingTypeRepository) {
+    public TrainingTypeServiceImpl(TrainingTypeRepository trainingTypeRepository, TrainingTypeMapper trainingTypeMapper) {
         this.trainingTypeRepository = trainingTypeRepository;
+        this.trainingTypeMapper = trainingTypeMapper;
     }
 
     @Override
-    public TrainingTypeEntity getByType(TrainingType type) {
+    public TrainingTypeEntityDto getByType(TrainingType type) {
         Objects.requireNonNull(type, "type is required");
-        return trainingTypeRepository.findByType(type).orElseThrow(() ->
+        TrainingTypeEntity entity = trainingTypeRepository.findByType(type).orElseThrow(() ->
                 new IllegalArgumentException("Training type " + type + " is not configured."));
+        return trainingTypeMapper.toDto(entity);
     }
 
     @Override
-    public List<TrainingTypeEntity> getAll() {
-        return trainingTypeRepository.findAll();
+    public List<TrainingTypeEntityDto> getAll() {
+        return trainingTypeMapper.toDtoList(trainingTypeRepository.findAll());
     }
 }
