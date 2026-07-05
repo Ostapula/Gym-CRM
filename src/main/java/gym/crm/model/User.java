@@ -23,7 +23,7 @@ public class User {
     private String username;
     @Column(nullable = false)
     private String password;
-    @Column(nullable = false)
+    @Column
     private boolean isActive;
 
     public User(String firstName, String lastName, String username, String password, boolean isActive) {
