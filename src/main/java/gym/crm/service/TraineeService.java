@@ -11,7 +11,7 @@ import java.util.Optional;
 public interface TraineeService {
     TraineeDto createTraineeProfile(TraineeDto traineeDto);
     boolean credentialsMatchTrainee(String username, String password);
-    TraineeDto updateTraineeProfile(TraineeDto traineeDto);
+    Optional<TraineeDto> updateTraineeProfile(TraineeDto traineeDto);
     Optional<TraineeDto> getTraineeByUsername(String username, String password);
     TraineeDto changePasswordTrainee(String username, String oldPassword, String newPassword);
     void activateTraineeProfile(String username, String password);
@@ -19,6 +19,6 @@ public interface TraineeService {
     void deleteTraineeProfile(String username, String password);
     List<TrainingDto> getTrainingsByUsername(String username, String password, LocalDate fromDate, LocalDate toDate,
                                              String trainerName, TrainingType trainingType);
-    TraineeDto updateTraineesTrainerList(TraineeDto traineeDto);
+    Optional<TraineeDto> updateTraineesTrainerList(TraineeDto traineeDto);
     List<TraineeDto> getAllTrainees(String username, String password);
 }

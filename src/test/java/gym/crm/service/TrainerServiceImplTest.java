@@ -164,19 +164,19 @@ class TrainerServiceImplTest {
         when(trainerRepository.findByUsername("Ann.Lee")).thenReturn(Optional.of(trainer("Ann.Lee", "pass", true)));
         when(trainerRepository.update(any(Trainer.class))).thenAnswer(i -> i.getArgument(0));
 
-        TrainerDto result = service.updateTrainerProfile(dto);
+        Optional<TrainerDto> result = service.updateTrainerProfile(dto);
 
-        assertNotNull(result);
-        assertEquals("Ann.Lee", result.getUsername());
+        assertTrue(result.isPresent());
+        assertEquals("Ann.Lee", result.get().getUsername());
         verify(trainerRepository).update(any(Trainer.class));
     }
 
     @Test
-    void updateProfileReturnsNullWhenAuthFails() {
+    void updateProfileReturnsEmptyWhenAuthFails() {
         TrainerDto dto = trainerDto("Ann.Lee", "wrongpass", true);
         when(trainerRepository.findByUsername("Ann.Lee")).thenReturn(Optional.of(trainer("Ann.Lee", "realpass", true)));
 
-        assertNull(service.updateTrainerProfile(dto));
+        assertTrue(service.updateTrainerProfile(dto).isEmpty());
         verify(trainerRepository, never()).update(any());
     }
 

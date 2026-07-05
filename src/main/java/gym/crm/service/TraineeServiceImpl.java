@@ -62,16 +62,16 @@ public class TraineeServiceImpl implements TraineeService {
     }
 
     @Override
-    public TraineeDto updateTraineeProfile(TraineeDto traineeDto) {
+    public Optional<TraineeDto> updateTraineeProfile(TraineeDto traineeDto) {
         validateUpdate(traineeDto);
         if (credentialsMatchTrainee(traineeDto.getUsername(), traineeDto.getPassword())) {
             log.info("Updating trainee profile username={}", traineeDto.getUsername());
             Trainee trainee = traineeMapper.toEntity(traineeDto);
             Trainee updated = traineeRepository.update(trainee);
-            return traineeMapper.toDto(updated);
+            return Optional.of(traineeMapper.toDto(updated));
         }
         log.info("Can't update trainee profile. Credentials do not match trainee username={}", traineeDto.getUsername());
-        return null;
+        return Optional.empty();
     }
 
     @Override
@@ -145,16 +145,16 @@ public class TraineeServiceImpl implements TraineeService {
     }
 
     @Override
-    public TraineeDto updateTraineesTrainerList(TraineeDto traineeDto) {
+    public Optional<TraineeDto> updateTraineesTrainerList(TraineeDto traineeDto) {
         validateUpdate(traineeDto);
         if (credentialsMatchTrainee(traineeDto.getUsername(), traineeDto.getPassword())) {
             log.info("Updating trainee trainer username={}", traineeDto.getUsername());
             Trainee trainee = traineeMapper.toEntity(traineeDto);
             Trainee updated = traineeRepository.updateTrainerList(trainee);
-            return traineeMapper.toDto(updated);
+            return Optional.of(traineeMapper.toDto(updated));
         }
         log.info("Can't update trainee trainer username={}", traineeDto.getUsername());
-        return null;
+        return Optional.empty();
     }
 
     @Override

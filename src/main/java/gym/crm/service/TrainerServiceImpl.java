@@ -65,16 +65,16 @@ public class TrainerServiceImpl implements TrainerService {
     }
 
     @Override
-    public TrainerDto updateTrainerProfile(TrainerDto trainerDto) {
+    public Optional<TrainerDto> updateTrainerProfile(TrainerDto trainerDto) {
         validateUpdate(trainerDto);
         if (credentialsMatchTrainer(trainerDto.getUsername(), trainerDto.getPassword())) {
             log.info("Updating trainer profile username={}", trainerDto.getUsername());
             Trainer trainer = trainerMapper.toEntity(trainerDto);
             Trainer updated = trainerRepository.update(trainer);
-            return trainerMapper.toDto(updated);
+            return Optional.of(trainerMapper.toDto(updated));
         }
         log.info("Can't update trainer profile. Credentials do not match trainer username={}", trainerDto.getUsername());
-        return null;
+        return Optional.empty();
     }
 
     @Override

@@ -60,8 +60,8 @@ class GymFacadeTest {
     @Test
     void updateTraineeDelegates() {
         TraineeDto t = mock(TraineeDto.class);
-        when(traineeService.updateTraineeProfile(t)).thenReturn(t);
-        assertSame(t, facade.updateTrainee(t));
+        when(traineeService.updateTraineeProfile(t)).thenReturn(Optional.of(t));
+        assertSame(t, facade.updateTrainee(t).orElseThrow());
     }
 
     @Test
@@ -93,8 +93,8 @@ class GymFacadeTest {
     @Test
     void updateTraineeTrainersDelegates() {
         TraineeDto t = mock(TraineeDto.class);
-        when(traineeService.updateTraineesTrainerList(t)).thenReturn(t);
-        assertSame(t, facade.updateTraineeTrainers(t));
+        when(traineeService.updateTraineesTrainerList(t)).thenReturn(Optional.of(t));
+        assertSame(t, facade.updateTraineeTrainers(t).orElseThrow());
     }
 
     @Test
@@ -139,8 +139,8 @@ class GymFacadeTest {
     @Test
     void updateTrainerDelegates() {
         TrainerDto t = mock(TrainerDto.class);
-        when(trainerService.updateTrainerProfile(t)).thenReturn(t);
-        assertSame(t, facade.updateTrainer(t));
+        when(trainerService.updateTrainerProfile(t)).thenReturn(Optional.of(t));
+        assertSame(t, facade.updateTrainer(t).orElseThrow());
     }
 
     @Test

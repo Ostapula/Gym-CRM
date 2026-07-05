@@ -115,19 +115,19 @@ class TraineeServiceImplTest {
         when(traineeRepository.findByUsername("John.Doe")).thenReturn(Optional.of(trainee("John.Doe", "pass", true)));
         when(traineeRepository.update(any(Trainee.class))).thenAnswer(i -> i.getArgument(0));
 
-        TraineeDto result = service.updateTraineeProfile(dto);
+        Optional<TraineeDto> result = service.updateTraineeProfile(dto);
 
-        assertNotNull(result);
-        assertEquals("John.Doe", result.getUsername());
+        assertTrue(result.isPresent());
+        assertEquals("John.Doe", result.get().getUsername());
         verify(traineeRepository).update(any(Trainee.class));
     }
 
     @Test
-    void updateReturnsNullWhenAuthFails() {
+    void updateReturnsEmptyWhenAuthFails() {
         TraineeDto dto = traineeDto("John.Doe", "wrongpass", true);
         when(traineeRepository.findByUsername("John.Doe")).thenReturn(Optional.of(trainee("John.Doe", "realpass", true)));
 
-        assertNull(service.updateTraineeProfile(dto));
+        assertTrue(service.updateTraineeProfile(dto).isEmpty());
         verify(traineeRepository, never()).update(any());
     }
 
@@ -254,19 +254,19 @@ class TraineeServiceImplTest {
         when(traineeRepository.findByUsername("John.Doe")).thenReturn(Optional.of(trainee("John.Doe", "pass", true)));
         when(traineeRepository.updateTrainerList(any(Trainee.class))).thenAnswer(i -> i.getArgument(0));
 
-        TraineeDto result = service.updateTraineesTrainerList(dto);
+        Optional<TraineeDto> result = service.updateTraineesTrainerList(dto);
 
-        assertNotNull(result);
-        assertEquals("John.Doe", result.getUsername());
+        assertTrue(result.isPresent());
+        assertEquals("John.Doe", result.get().getUsername());
         verify(traineeRepository).updateTrainerList(any(Trainee.class));
     }
 
     @Test
-    void updateTrainerListReturnsNullWhenAuthFails() {
+    void updateTrainerListReturnsEmptyWhenAuthFails() {
         TraineeDto dto = traineeDto("John.Doe", "wrongpass", true);
         when(traineeRepository.findByUsername("John.Doe")).thenReturn(Optional.of(trainee("John.Doe", "realpass", true)));
 
-        assertNull(service.updateTraineesTrainerList(dto));
+        assertTrue(service.updateTraineesTrainerList(dto).isEmpty());
         verify(traineeRepository, never()).updateTrainerList(any());
     }
 }

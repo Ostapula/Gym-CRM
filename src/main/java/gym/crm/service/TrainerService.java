@@ -10,7 +10,7 @@ import java.util.Optional;
 public interface TrainerService {
     TrainerDto createTrainerProfile(TrainerDto trainerDto);
     boolean credentialsMatchTrainer(String username, String password);
-    TrainerDto updateTrainerProfile(TrainerDto trainerDto);
+    Optional<TrainerDto> updateTrainerProfile(TrainerDto trainerDto);
     Optional<TrainerDto> getTrainerByUsername(String username, String password);
     TrainerDto changePasswordTrainer(String username, String oldPassword, String newPassword);
     void activateTrainerProfile(String username, String password);

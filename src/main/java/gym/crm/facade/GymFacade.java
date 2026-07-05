@@ -44,7 +44,7 @@ public class GymFacade {
         return traineeService.getTraineeByUsername(username, password);
     }
 
-    public TraineeDto updateTrainee(TraineeDto traineeDto) {
+    public Optional<TraineeDto> updateTrainee(TraineeDto traineeDto) {
         return traineeService.updateTraineeProfile(traineeDto);
     }
 
@@ -64,7 +64,7 @@ public class GymFacade {
         traineeService.deleteTraineeProfile(username, password);
     }
 
-    public TraineeDto updateTraineeTrainers(TraineeDto traineeDto) {
+    public Optional<TraineeDto> updateTraineeTrainers(TraineeDto traineeDto) {
         return traineeService.updateTraineesTrainerList(traineeDto);
     }
 
@@ -89,7 +89,7 @@ public class GymFacade {
         return trainerService.getTrainerByUsername(username, password);
     }
 
-    public TrainerDto updateTrainer(TrainerDto trainerDto) {
+    public Optional<TrainerDto> updateTrainer(TrainerDto trainerDto) {
         return trainerService.updateTrainerProfile(trainerDto);
     }
 
