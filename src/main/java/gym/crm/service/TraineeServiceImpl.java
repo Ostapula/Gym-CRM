@@ -91,7 +91,7 @@ public class TraineeServiceImpl implements TraineeService {
         requireText(username, "username");
         requireText(oldPassword, "oldPassword");
         requireText(newPassword, "newPassword");
-        requireAuthenticatedTrainee(username, oldPassword);
+        getAuthenticatedTrainee(username, oldPassword);
         log.info("Changing password for trainee username={}", username);
         Trainee trainee = traineeRepository.changePassword(username, newPassword);
         return traineeMapper.toDto(trainee);
@@ -99,9 +99,7 @@ public class TraineeServiceImpl implements TraineeService {
 
     @Override
     public void activateTraineeProfile(String username, String password) {
-        requireAuthenticatedTrainee(username, password);
-        Trainee trainee = traineeRepository.findByUsername(username).orElseThrow(() ->
-                new IllegalArgumentException("Trainee not found username=" + username));
+        Trainee trainee = getAuthenticatedTrainee(username, password);
         if (trainee.isActive()) {
             throw new IllegalStateException("Trainee profile is already active username=" + username);
         }
@@ -111,9 +109,7 @@ public class TraineeServiceImpl implements TraineeService {
 
     @Override
     public void deactivateTraineeProfile(String username, String password) {
-        requireAuthenticatedTrainee(username, password);
-        Trainee trainee = traineeRepository.findByUsername(username).orElseThrow(() ->
-                new IllegalArgumentException("Trainee not found username=" + username));
+        Trainee trainee = getAuthenticatedTrainee(username, password);
         if (!trainee.isActive()) {
             throw new IllegalStateException("Trainee profile is already inactive username=" + username);
         }
@@ -123,25 +119,17 @@ public class TraineeServiceImpl implements TraineeService {
 
     @Override
     public void deleteTraineeProfile(String username, String password) {
-        requireAuthenticatedTrainee(username, password);
-        if (traineeRepository.findByUsername(username).isPresent()) {
-            log.info("Deleting trainee profile username={}", username);
-            traineeRepository.deleteByUsername(username);
-        } else {
-            log.info("Can't delete trainee profile. Trainee not found username={}", username);
-        }
+        getAuthenticatedTrainee(username, password);
+        log.info("Deleting trainee profile username={}", username);
+        traineeRepository.deleteByUsername(username);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<TrainingDto> getTrainingsByUsername(String username, String password, LocalDate fromDate, LocalDate toDate, String trainerName, TrainingType trainingType) {
-        requireAuthenticatedTrainee(username, password);
-        if (traineeRepository.findByUsername(username).isPresent()) {
-            log.info("Getting trainings for trainee username={}", username);
-            return trainingMapper.toDtoList(traineeRepository.findTrainingsByUsername(username, fromDate, toDate, trainerName, trainingType));
-        }
-        log.info("Can't get trainings. Trainee not found username={}", username);
-        return List.of();
+        getAuthenticatedTrainee(username, password);
+        log.info("Getting trainings for trainee username={}", username);
+        return trainingMapper.toDtoList(traineeRepository.findTrainingsByUsername(username, fromDate, toDate, trainerName, trainingType));
     }
 
     @Override
@@ -160,14 +148,15 @@ public class TraineeServiceImpl implements TraineeService {
     @Override
     @Transactional(readOnly = true)
     public List<TraineeDto> getAllTrainees(String username, String password) {
-        requireAuthenticatedTrainee(username, password);
+        getAuthenticatedTrainee(username, password);
         return traineeMapper.toDtoList(traineeRepository.findAll());
     }
 
-    private void requireAuthenticatedTrainee(String username, String password) {
-        if (!credentialsMatchTrainee(username, password)) {
-            throw new IllegalArgumentException("Authentication failed for trainee username=" + username);
-        }
+    private Trainee getAuthenticatedTrainee(String username, String password) {
+        return traineeRepository.findByUsername(username)
+                .filter(trainee -> trainee.getPassword().equals(password))
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Authentication failed for trainee username=" + username));
     }
 
     private void validateCreate(TraineeDto traineeDto) {

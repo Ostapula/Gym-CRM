@@ -48,8 +48,8 @@ class TrainerServiceImplTest {
         return new TrainingTypeEntity(1, TrainingType.CARDIO);
     }
 
-    private TrainerDto trainerDto(String username, String password, boolean active) {
-        return new TrainerDto(2L, "Ann", "Lee", username, password, active,
+    private TrainerDto trainerDto(String username, String password) {
+        return new TrainerDto(2L, "Ann", "Lee", username, password, true,
                 1, TrainingType.CARDIO, Set.of(), Set.of());
     }
 
@@ -63,7 +63,7 @@ class TrainerServiceImplTest {
 
     @Test
     void createGeneratesCredentialsAndPersists() {
-        TrainerDto input = trainerDto(null, null, true);
+        TrainerDto input = trainerDto(null, null);
         when(credentialsGenerator.generateUsername(eq("Ann"), eq("Lee"), any())).thenReturn("Ann.Lee");
         when(credentialsGenerator.generatePassword()).thenReturn("genpass123");
         when(trainerRepository.create(any(Trainer.class))).thenAnswer(i -> i.getArgument(0));
@@ -83,7 +83,7 @@ class TrainerServiceImplTest {
 
     @Test
     void createRejectsMissingSpecialization() {
-        TrainerDto input = trainerDto(null, null, true);
+        TrainerDto input = trainerDto(null, null);
         input.setSpecializationId(null);
         input.setSpecializationType(null);
         assertThrows(NullPointerException.class, () -> service.createTrainerProfile(input));
@@ -136,6 +136,7 @@ class TrainerServiceImplTest {
         when(trainerRepository.findByUsername("Ann.Lee")).thenReturn(Optional.of(trainer("Ann.Lee", "pass", true)));
         service.deactivateTrainerProfile("Ann.Lee", "pass");
         verify(trainerRepository).setProfileActiveByUsername("Ann.Lee", false);
+        verify(trainerRepository, times(1)).findByUsername("Ann.Lee");
     }
 
     @Test
@@ -147,7 +148,7 @@ class TrainerServiceImplTest {
         List<TrainerDto> result = service.getTrainersNotAssignedToTraineeByUsername("john", "pass");
 
         assertEquals(1, result.size());
-        assertEquals("Ann.Lee", result.get(0).getUsername());
+        assertEquals("Ann.Lee", result.getFirst().getUsername());
     }
 
     @Test
@@ -160,7 +161,7 @@ class TrainerServiceImplTest {
 
     @Test
     void updateProfileSucceedsWhenAuthenticated() {
-        TrainerDto dto = trainerDto("Ann.Lee", "pass", true);
+        TrainerDto dto = trainerDto("Ann.Lee", "pass");
         when(trainerRepository.findByUsername("Ann.Lee")).thenReturn(Optional.of(trainer("Ann.Lee", "pass", true)));
         when(trainerRepository.update(any(Trainer.class))).thenAnswer(i -> i.getArgument(0));
 
@@ -173,7 +174,7 @@ class TrainerServiceImplTest {
 
     @Test
     void updateProfileReturnsEmptyWhenAuthFails() {
-        TrainerDto dto = trainerDto("Ann.Lee", "wrongpass", true);
+        TrainerDto dto = trainerDto("Ann.Lee", "wrongpass");
         when(trainerRepository.findByUsername("Ann.Lee")).thenReturn(Optional.of(trainer("Ann.Lee", "realpass", true)));
 
         assertTrue(service.updateTrainerProfile(dto).isEmpty());
@@ -205,6 +206,7 @@ class TrainerServiceImplTest {
         service.activateTrainerProfile("Ann.Lee", "pass");
 
         verify(trainerRepository).setProfileActiveByUsername("Ann.Lee", true);
+        verify(trainerRepository, times(1)).findByUsername("Ann.Lee");
     }
 
     @Test
@@ -218,8 +220,9 @@ class TrainerServiceImplTest {
         List<TrainingDto> result = service.getTrainingsByUsername("Ann.Lee", "pass", null, null, "John Doe");
 
         assertEquals(1, result.size());
-        assertEquals(5L, result.get(0).getId());
-        assertEquals(2L, result.get(0).getTrainerId());
-        assertEquals(TrainingType.CARDIO, result.get(0).getTrainingType());
+        assertEquals(5L, result.getFirst().getId());
+        assertEquals(2L, result.getFirst().getTrainerId());
+        assertEquals(TrainingType.CARDIO, result.getFirst().getTrainingType());
+        verify(trainerRepository, times(1)).findByUsername("Ann.Lee");
     }
 }

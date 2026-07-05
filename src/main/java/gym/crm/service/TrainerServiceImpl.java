@@ -94,7 +94,7 @@ public class TrainerServiceImpl implements TrainerService {
         requireText(username, "username");
         requireText(oldPassword, "oldPassword");
         requireText(newPassword, "newPassword");
-        requireAuthenticatedTrainer(username, oldPassword);
+        getAuthenticatedTrainer(username, oldPassword);
         log.info("Changing password for trainer username={}", username);
         Trainer trainer = trainerRepository.changePassword(username, newPassword);
         return trainerMapper.toDto(trainer);
@@ -102,9 +102,7 @@ public class TrainerServiceImpl implements TrainerService {
 
     @Override
     public void activateTrainerProfile(String username, String password) {
-        requireAuthenticatedTrainer(username, password);
-        Trainer trainer = trainerRepository.findByUsername(username).orElseThrow(() ->
-                new IllegalArgumentException("Trainer not found username=" + username));
+        Trainer trainer = getAuthenticatedTrainer(username, password);
         if (trainer.isActive()) {
             throw new IllegalStateException("Trainer profile is already active username=" + username);
         }
@@ -114,9 +112,7 @@ public class TrainerServiceImpl implements TrainerService {
 
     @Override
     public void deactivateTrainerProfile(String username, String password) {
-        requireAuthenticatedTrainer(username, password);
-        Trainer trainer = trainerRepository.findByUsername(username).orElseThrow(() ->
-                new IllegalArgumentException("Trainer not found username=" + username));
+        Trainer trainer = getAuthenticatedTrainer(username, password);
         if (!trainer.isActive()) {
             throw new IllegalStateException("Trainer profile is already inactive username=" + username);
         }
@@ -128,13 +124,9 @@ public class TrainerServiceImpl implements TrainerService {
     @Transactional(readOnly = true)
     public List<TrainingDto> getTrainingsByUsername(String username, String password, LocalDate fromDate, LocalDate toDate,
                                                     String traineeName) {
-        requireAuthenticatedTrainer(username, password);
-        if (trainerRepository.findByUsername(username).isPresent()) {
-            log.info("Getting trainings for trainer username={}", username);
-            return trainingMapper.toDtoList(trainerRepository.findTrainingsByUsername(username, fromDate, toDate, traineeName));
-        }
-        log.info("Can't get trainings. Trainer not found username={}", username);
-        return List.of();
+        getAuthenticatedTrainer(username, password);
+        log.info("Getting trainings for trainer username={}", username);
+        return trainingMapper.toDtoList(trainerRepository.findTrainingsByUsername(username, fromDate, toDate, traineeName));
     }
 
     @Override
@@ -147,10 +139,11 @@ public class TrainerServiceImpl implements TrainerService {
         return trainerMapper.toDtoList(trainerRepository.findTrainersNotAssignedToTraineeByUsername(traineeUsername));
     }
 
-    private void requireAuthenticatedTrainer(String username, String password) {
-        if (!credentialsMatchTrainer(username, password)) {
-            throw new IllegalArgumentException("Authentication failed for trainer username=" + username);
-        }
+    private Trainer getAuthenticatedTrainer(String username, String password) {
+        return trainerRepository.findByUsername(username)
+                .filter(trainer -> trainer.getPassword().equals(password))
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Authentication failed for trainer username=" + username));
     }
 
     private void validateCreate(TrainerDto trainerDto) {
