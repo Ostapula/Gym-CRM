@@ -73,10 +73,7 @@ public class TrainerRepositoryImpl implements TrainerRepository {
 
     @Override
     public boolean existsById(Long id) {
-        Long count = entityManager.createQuery("SELECT count(t) FROM Trainer t WHERE t.id = :id", Long.class)
-                .setParameter("id", id)
-                .getSingleResult();
-        return count > 0;
+        return entityManager.find(Trainer.class, id) != null;
     }
 
     @Override

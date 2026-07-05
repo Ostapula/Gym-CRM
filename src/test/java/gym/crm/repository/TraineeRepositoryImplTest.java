@@ -34,8 +34,6 @@ class TraineeRepositoryImplTest {
     @Mock
     private TypedQuery<Trainee> traineeQuery;
     @Mock
-    private TypedQuery<Long> longQuery;
-    @Mock
     private TypedQuery<Training> trainingQuery;
     @Mock
     private CriteriaBuilder criteriaBuilder;
@@ -100,19 +98,15 @@ class TraineeRepositoryImplTest {
     }
 
     @Test
-    void existsByIdReturnsTrueWhenCountPositive() {
-        when(entityManager.createQuery(anyString(), eq(Long.class))).thenReturn(longQuery);
-        when(longQuery.setParameter("id", 1L)).thenReturn(longQuery);
-        when(longQuery.getSingleResult()).thenReturn(1L);
+    void existsByIdReturnsTrueWhenEntityFound() {
+        when(entityManager.find(Trainee.class, 1L)).thenReturn(trainee("pass"));
 
         assertTrue(repository.existsById(1L));
     }
 
     @Test
-    void existsByIdReturnsFalseWhenCountZero() {
-        when(entityManager.createQuery(anyString(), eq(Long.class))).thenReturn(longQuery);
-        when(longQuery.setParameter("id", 99L)).thenReturn(longQuery);
-        when(longQuery.getSingleResult()).thenReturn(0L);
+    void existsByIdReturnsFalseWhenEntityMissing() {
+        when(entityManager.find(Trainee.class, 99L)).thenReturn(null);
 
         assertFalse(repository.existsById(99L));
     }
@@ -142,9 +136,7 @@ class TraineeRepositoryImplTest {
     @Test
     void updateChecksExistenceThenMerges() {
         Trainee t = trainee("pass");
-        when(entityManager.createQuery(anyString(), eq(Long.class))).thenReturn(longQuery);
-        when(longQuery.setParameter("id", 1L)).thenReturn(longQuery);
-        when(longQuery.getSingleResult()).thenReturn(1L);
+        when(entityManager.find(Trainee.class, 1L)).thenReturn(t);
         when(entityManager.merge(t)).thenReturn(t);
 
         assertSame(t, repository.update(t));
@@ -154,9 +146,7 @@ class TraineeRepositoryImplTest {
     @Test
     void updateThrowsWhenEntityMissing() {
         Trainee t = trainee("pass");
-        when(entityManager.createQuery(anyString(), eq(Long.class))).thenReturn(longQuery);
-        when(longQuery.setParameter("id", 1L)).thenReturn(longQuery);
-        when(longQuery.getSingleResult()).thenReturn(0L);
+        when(entityManager.find(Trainee.class, 1L)).thenReturn(null);
 
         assertThrows(IllegalArgumentException.class, () -> repository.update(t));
         verify(entityManager, never()).merge(any());
@@ -165,9 +155,7 @@ class TraineeRepositoryImplTest {
     @Test
     void updateTrainerListChecksExistenceThenMerges() {
         Trainee t = trainee("pass");
-        when(entityManager.createQuery(anyString(), eq(Long.class))).thenReturn(longQuery);
-        when(longQuery.setParameter("id", 1L)).thenReturn(longQuery);
-        when(longQuery.getSingleResult()).thenReturn(1L);
+        when(entityManager.find(Trainee.class, 1L)).thenReturn(t);
         when(entityManager.merge(t)).thenReturn(t);
 
         assertSame(t, repository.updateTrainerList(t));

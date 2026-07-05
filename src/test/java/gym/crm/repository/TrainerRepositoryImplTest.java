@@ -97,9 +97,7 @@ class TrainerRepositoryImplTest {
     @Test
     void updateChecksExistenceThenMerges() {
         Trainer t = trainer("Ann.Lee", "pass");
-        when(entityManager.createQuery(anyString(), eq(Long.class))).thenReturn(longQuery);
-        when(longQuery.setParameter("id", 2L)).thenReturn(longQuery);
-        when(longQuery.getSingleResult()).thenReturn(1L);
+        when(entityManager.find(Trainer.class, 2L)).thenReturn(t);
         when(entityManager.merge(t)).thenReturn(t);
 
         assertSame(t, repository.update(t));
@@ -107,12 +105,17 @@ class TrainerRepositoryImplTest {
     }
 
     @Test
-    void existsByIdReflectsCount() {
-        when(entityManager.createQuery(anyString(), eq(Long.class))).thenReturn(longQuery);
-        when(longQuery.setParameter("id", 2L)).thenReturn(longQuery);
-        when(longQuery.getSingleResult()).thenReturn(1L);
+    void existsByIdReturnsTrueWhenEntityFound() {
+        when(entityManager.find(Trainer.class, 2L)).thenReturn(trainer("Ann.Lee", "pass"));
 
         assertTrue(repository.existsById(2L));
+    }
+
+    @Test
+    void existsByIdReturnsFalseWhenEntityMissing() {
+        when(entityManager.find(Trainer.class, 99L)).thenReturn(null);
+
+        assertFalse(repository.existsById(99L));
     }
 
     @Test

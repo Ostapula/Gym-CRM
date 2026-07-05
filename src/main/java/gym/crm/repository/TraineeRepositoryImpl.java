@@ -126,10 +126,7 @@ public class TraineeRepositoryImpl implements TraineeRepository {
 
     @Override
     public boolean existsById(Long id) {
-        Long count = entityManager.createQuery("SELECT count(t) FROM Trainee t WHERE t.id = :id", Long.class)
-                .setParameter("id", id)
-                .getSingleResult();
-        return count > 0;
+        return entityManager.find(Trainee.class, id) != null;
     }
 
     private void requireExists(Long id) {
