@@ -1,7 +1,9 @@
 package gym.crm.facade;
 
+import gym.crm.dto.AddTrainingRequest;
 import gym.crm.dto.TraineeDto;
 import gym.crm.dto.TrainerDto;
+import gym.crm.dto.TrainerSummaryDto;
 import gym.crm.dto.TrainingDto;
 import gym.crm.dto.TrainingTypeEntityDto;
 import gym.crm.model.TrainingType;
@@ -53,8 +55,8 @@ class GymFacadeTest {
     @Test
     void getTraineeDelegates() {
         Optional<TraineeDto> opt = Optional.of(mock(TraineeDto.class));
-        when(traineeService.getTraineeByUsername("u", "p")).thenReturn(opt);
-        assertSame(opt, facade.getTrainee("u", "p"));
+        when(traineeService.getTraineeByUsername("u")).thenReturn(opt);
+        assertSame(opt, facade.getTrainee("u"));
     }
 
     @Test
@@ -74,34 +76,35 @@ class GymFacadeTest {
 
     @Test
     void activateTraineeDelegates() {
-        facade.activateTrainee("u", "p");
-        verify(traineeService).activateTraineeProfile("u", "p");
+        facade.activateTrainee("u");
+        verify(traineeService).activateTraineeProfile("u");
     }
 
     @Test
     void deactivateTraineeDelegates() {
-        facade.deactivateTrainee("u", "p");
-        verify(traineeService).deactivateTraineeProfile("u", "p");
+        facade.deactivateTrainee("u");
+        verify(traineeService).deactivateTraineeProfile("u");
     }
 
     @Test
     void deleteTraineeDelegates() {
-        facade.deleteTrainee("u", "p");
-        verify(traineeService).deleteTraineeProfile("u", "p");
+        facade.deleteTrainee("u");
+        verify(traineeService).deleteTraineeProfile("u");
     }
 
     @Test
     void updateTraineeTrainersDelegates() {
-        TraineeDto t = mock(TraineeDto.class);
-        when(traineeService.updateTraineesTrainerList(t)).thenReturn(Optional.of(t));
-        assertSame(t, facade.updateTraineeTrainers(t).orElseThrow());
+        List<TrainerSummaryDto> list = List.of(mock(TrainerSummaryDto.class));
+        when(traineeService.updateTraineesTrainerList("john", List.of("ann"))).thenReturn(list);
+        assertSame(list, facade.updateTraineeTrainers("john", List.of("ann")));
+        verify(traineeService).updateTraineesTrainerList("john", List.of("ann"));
     }
 
     @Test
     void getAllTraineesDelegates() {
         List<TraineeDto> list = List.of(mock(TraineeDto.class));
-        when(traineeService.getAllTrainees("u", "p")).thenReturn(list);
-        assertSame(list, facade.getAllTrainees("u", "p"));
+        when(traineeService.getAllTrainees()).thenReturn(list);
+        assertSame(list, facade.getAllTrainees());
     }
 
     @Test
@@ -109,11 +112,11 @@ class GymFacadeTest {
         LocalDate from = LocalDate.of(2024, 1, 1);
         LocalDate to = LocalDate.of(2024, 12, 31);
         List<TrainingDto> list = List.of(mock(TrainingDto.class));
-        when(traineeService.getTrainingsByUsername("u", "p", from, to, "Ann Lee", TrainingType.CARDIO))
+        when(traineeService.getTrainingsByUsername("u", from, to, "Ann Lee", TrainingType.CARDIO))
                 .thenReturn(list);
 
-        assertSame(list, facade.getTraineeTrainings("u", "p", from, to, "Ann Lee", TrainingType.CARDIO));
-        verify(traineeService).getTrainingsByUsername("u", "p", from, to, "Ann Lee", TrainingType.CARDIO);
+        assertSame(list, facade.getTraineeTrainings("u", from, to, "Ann Lee", TrainingType.CARDIO));
+        verify(traineeService).getTrainingsByUsername("u", from, to, "Ann Lee", TrainingType.CARDIO);
     }
 
     @Test
@@ -132,8 +135,8 @@ class GymFacadeTest {
     @Test
     void getTrainerDelegates() {
         Optional<TrainerDto> opt = Optional.of(mock(TrainerDto.class));
-        when(trainerService.getTrainerByUsername("u", "p")).thenReturn(opt);
-        assertSame(opt, facade.getTrainer("u", "p"));
+        when(trainerService.getTrainerByUsername("u")).thenReturn(opt);
+        assertSame(opt, facade.getTrainer("u"));
     }
 
     @Test
@@ -152,21 +155,21 @@ class GymFacadeTest {
 
     @Test
     void activateTrainerDelegates() {
-        facade.activateTrainer("u", "p");
-        verify(trainerService).activateTrainerProfile("u", "p");
+        facade.activateTrainer("u");
+        verify(trainerService).activateTrainerProfile("u");
     }
 
     @Test
     void deactivateTrainerDelegates() {
-        facade.deactivateTrainer("u", "p");
-        verify(trainerService).deactivateTrainerProfile("u", "p");
+        facade.deactivateTrainer("u");
+        verify(trainerService).deactivateTrainerProfile("u");
     }
 
     @Test
     void getTrainersNotAssignedDelegates() {
         List<TrainerDto> list = List.of(mock(TrainerDto.class));
-        when(trainerService.getTrainersNotAssignedToTraineeByUsername("john", "p")).thenReturn(list);
-        assertSame(list, facade.getTrainersNotAssignedToTrainee("john", "p"));
+        when(trainerService.getTrainersNotAssignedToTraineeByUsername("john")).thenReturn(list);
+        assertSame(list, facade.getTrainersNotAssignedToTrainee("john"));
     }
 
     @Test
@@ -174,26 +177,24 @@ class GymFacadeTest {
         LocalDate from = LocalDate.of(2024, 1, 1);
         LocalDate to = LocalDate.of(2024, 12, 31);
         List<TrainingDto> list = List.of(mock(TrainingDto.class));
-        when(trainerService.getTrainingsByUsername("u", "p", from, to, "John Doe")).thenReturn(list);
+        when(trainerService.getTrainingsByUsername("u", from, to, "John Doe")).thenReturn(list);
 
-        assertSame(list, facade.getTrainerTrainings("u", "p", from, to, "John Doe"));
-        verify(trainerService).getTrainingsByUsername("u", "p", from, to, "John Doe");
+        assertSame(list, facade.getTrainerTrainings("u", from, to, "John Doe"));
+        verify(trainerService).getTrainingsByUsername("u", from, to, "John Doe");
     }
-
 
     @Test
     void addTrainingDelegates() {
-        TrainingDto t = mock(TrainingDto.class);
-        when(trainingService.createTraining(t, "Ann.Lee", "p")).thenReturn(t);
-        assertSame(t, facade.addTraining(t, "Ann.Lee", "p"));
-        verify(trainingService).createTraining(t, "Ann.Lee", "p");
+        AddTrainingRequest request = mock(AddTrainingRequest.class);
+        facade.addTraining(request);
+        verify(trainingService).createTraining(request);
     }
 
     @Test
     void getAllTrainingsDelegates() {
         List<TrainingDto> list = List.of(mock(TrainingDto.class));
-        when(trainingService.getAllTrainings("Ann.Lee", "p")).thenReturn(list);
-        assertSame(list, facade.getAllTrainings("Ann.Lee", "p"));
+        when(trainingService.getAllTrainings()).thenReturn(list);
+        assertSame(list, facade.getAllTrainings());
     }
 
     @Test

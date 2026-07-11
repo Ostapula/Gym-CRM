@@ -11,11 +11,11 @@ public interface TrainerService {
     TrainerDto createTrainerProfile(TrainerDto trainerDto);
     boolean credentialsMatchTrainer(String username, String password);
     Optional<TrainerDto> updateTrainerProfile(TrainerDto trainerDto);
-    Optional<TrainerDto> getTrainerByUsername(String username, String password);
+    Optional<TrainerDto> getTrainerByUsername(String username);
     TrainerDto changePasswordTrainer(String username, String oldPassword, String newPassword);
-    void activateTrainerProfile(String username, String password);
-    void deactivateTrainerProfile(String username, String password);
-    List<TrainingDto> getTrainingsByUsername(String username, String password, LocalDate fromDate, LocalDate toDate,
+    void activateTrainerProfile(String username);
+    void deactivateTrainerProfile(String username);
+    List<TrainingDto> getTrainingsByUsername(String username, LocalDate fromDate, LocalDate toDate,
                                              String traineeName);
-    List<TrainerDto> getTrainersNotAssignedToTraineeByUsername(String traineeUsername, String traineePassword);
+    List<TrainerDto> getTrainersNotAssignedToTraineeByUsername(String traineeUsername);
 }

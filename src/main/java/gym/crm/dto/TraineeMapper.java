@@ -15,11 +15,11 @@ import java.util.stream.Collectors;
 public interface TraineeMapper {
 
     @Mapping(target = "trainings", source = "trainings", qualifiedByName = "idsToTrainings")
-    @Mapping(target = "trainers", source = "trainers", qualifiedByName = "idsToTrainers")
+    @Mapping(target = "trainers", source = "trainers", qualifiedByName = "usernamesToTrainers")
     Trainee toEntity(TraineeDto dto);
 
     @Mapping(target = "trainings", source = "trainings", qualifiedByName = "trainingsToIds")
-    @Mapping(target = "trainers", source = "trainers", qualifiedByName = "trainersToIds")
+    @Mapping(target = "trainers", source = "trainers", qualifiedByName = "trainersToUsernames")
     TraineeDto toDto(Trainee trainee);
 
     List<TraineeDto> toDtoList(List<Trainee> trainees);
@@ -36,13 +36,13 @@ public interface TraineeMapper {
                 .collect(Collectors.toSet());
     }
 
-    @Named("trainersToIds")
-    default Set<Long> trainersToIds(Set<Trainer> trainers) {
+    @Named("trainersToUsernames")
+    default Set<String> trainersToUsernames(Set<Trainer> trainers) {
         if (trainers == null) {
             return null;
         }
         return trainers.stream()
-                .map(Trainer::getId)
+                .map(Trainer::getUsername)
                 .collect(Collectors.toSet());
     }
 
@@ -60,15 +60,15 @@ public interface TraineeMapper {
                 .collect(Collectors.toSet());
     }
 
-    @Named("idsToTrainers")
-    default Set<Trainer> idsToTrainers(Set<Long> ids) {
-        if (ids == null) {
+    @Named("usernamesToTrainers")
+    default Set<Trainer> usernamesToTrainers(Set<String> usernames) {
+        if (usernames == null) {
             return null;
         }
-        return ids.stream()
-                .map(id -> {
+        return usernames.stream()
+                .map(username -> {
                     Trainer trainer = new Trainer();
-                    trainer.setId(id);
+                    trainer.setUsername(username);
                     return trainer;
                 })
                 .collect(Collectors.toSet());

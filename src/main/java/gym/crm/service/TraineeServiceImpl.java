@@ -1,36 +1,39 @@
 package gym.crm.service;
 
-import gym.crm.dto.TraineeMapper;
-import gym.crm.dto.TrainingDto;
-import gym.crm.dto.TrainingMapper;
+import gym.crm.dto.*;
 import gym.crm.model.Trainee;
+import gym.crm.model.Trainer;
 import gym.crm.model.TrainingType;
 import gym.crm.repository.TraineeRepository;
+import gym.crm.repository.TrainerRepository;
 import gym.crm.util.CredentialsGenerator;
-import gym.crm.dto.TraineeDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @Transactional
 public class TraineeServiceImpl implements TraineeService {
     private final TraineeRepository traineeRepository;
+    private final TrainerRepository trainerRepository;
     private final CredentialsGenerator credentialsGenerator;
     private final TraineeMapper traineeMapper;
+    private final TrainerMapper trainerMapper;
     private final TrainingMapper trainingMapper;
 
-    public TraineeServiceImpl(TraineeRepository traineeRepository, CredentialsGenerator credentialsGenerator,
-                              TraineeMapper traineeMapper, TrainingMapper trainingMapper) {
+    public TraineeServiceImpl(TraineeRepository traineeRepository, TrainerRepository trainerRepository,
+                              CredentialsGenerator credentialsGenerator, TraineeMapper traineeMapper,
+                              TrainerMapper trainerMapper, TrainingMapper trainingMapper) {
         this.traineeRepository = traineeRepository;
+        this.trainerRepository = trainerRepository;
         this.credentialsGenerator = credentialsGenerator;
         this.traineeMapper = traineeMapper;
+        this.trainerMapper = trainerMapper;
         this.trainingMapper = trainingMapper;
     }
 
@@ -53,9 +56,7 @@ public class TraineeServiceImpl implements TraineeService {
     public boolean credentialsMatchTrainee(String username, String password) {
         Optional<Trainee> traineeOpt = traineeRepository.findByUsername(username);
         if (traineeOpt.isPresent()) {
-            Trainee trainee = traineeOpt.get();
-            log.info("Credentials match trainee username={}", username);
-            return trainee.getPassword().equals(password);
+            return traineeOpt.get().getPassword().equals(password);
         }
         log.info("Credentials do not match trainee username={}", username);
         return false;
@@ -64,25 +65,20 @@ public class TraineeServiceImpl implements TraineeService {
     @Override
     public Optional<TraineeDto> updateTraineeProfile(TraineeDto traineeDto) {
         validateUpdate(traineeDto);
-        if (credentialsMatchTrainee(traineeDto.getUsername(), traineeDto.getPassword())) {
-            log.info("Updating trainee profile username={}", traineeDto.getUsername());
-            Trainee trainee = traineeMapper.toEntity(traineeDto);
-            Trainee updated = traineeRepository.update(trainee);
-            return Optional.of(traineeMapper.toDto(updated));
-        }
-        log.info("Can't update trainee profile. Credentials do not match trainee username={}", traineeDto.getUsername());
-        return Optional.empty();
+        Trainee trainee = requireTrainee(traineeDto.getUsername());
+        log.info("Updating trainee profile username={}", traineeDto.getUsername());
+        trainee.setFirstName(traineeDto.getFirstName());
+        trainee.setLastName(traineeDto.getLastName());
+        trainee.setActive(traineeDto.isActive());
+        trainee.setAddress(traineeDto.getAddress());
+        trainee.setDob(traineeDto.getDob());
+        return Optional.of(traineeMapper.toDto(trainee));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<TraineeDto> getTraineeByUsername(String username, String password) {
-        Trainee trainee = traineeRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("Username " + username + " does not exist"));
-
-        if (!trainee.getPassword().equals(password)) {
-            throw new IllegalArgumentException("Authentication failed. Wrong password.");
-        }
+    public Optional<TraineeDto> getTraineeByUsername(String username) {
+        Trainee trainee = requireTrainee(username);
         return Optional.of(traineeMapper.toDto(trainee));
     }
 
@@ -91,15 +87,17 @@ public class TraineeServiceImpl implements TraineeService {
         requireText(username, "username");
         requireText(oldPassword, "oldPassword");
         requireText(newPassword, "newPassword");
-        getAuthenticatedTrainee(username, oldPassword);
+        if (!credentialsMatchTrainee(username, oldPassword)) {
+            throw new IllegalArgumentException("Authentication failed for trainee username=" + username);
+        }
         log.info("Changing password for trainee username={}", username);
         Trainee trainee = traineeRepository.changePassword(username, newPassword);
         return traineeMapper.toDto(trainee);
     }
 
     @Override
-    public void activateTraineeProfile(String username, String password) {
-        Trainee trainee = getAuthenticatedTrainee(username, password);
+    public void activateTraineeProfile(String username) {
+        Trainee trainee = requireTrainee(username);
         if (trainee.isActive()) {
             throw new IllegalStateException("Trainee profile is already active username=" + username);
         }
@@ -108,8 +106,8 @@ public class TraineeServiceImpl implements TraineeService {
     }
 
     @Override
-    public void deactivateTraineeProfile(String username, String password) {
-        Trainee trainee = getAuthenticatedTrainee(username, password);
+    public void deactivateTraineeProfile(String username) {
+        Trainee trainee = requireTrainee(username);
         if (!trainee.isActive()) {
             throw new IllegalStateException("Trainee profile is already inactive username=" + username);
         }
@@ -118,59 +116,61 @@ public class TraineeServiceImpl implements TraineeService {
     }
 
     @Override
-    public void deleteTraineeProfile(String username, String password) {
-        getAuthenticatedTrainee(username, password);
+    public void deleteTraineeProfile(String username) {
+        requireTrainee(username);
         log.info("Deleting trainee profile username={}", username);
         traineeRepository.deleteByUsername(username);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<TrainingDto> getTrainingsByUsername(String username, String password, LocalDate fromDate, LocalDate toDate, String trainerName, TrainingType trainingType) {
-        getAuthenticatedTrainee(username, password);
+    public List<TrainingDto> getTrainingsByUsername(String username, LocalDate fromDate, LocalDate toDate,
+                                                    String trainerName, TrainingType trainingType) {
+        requireTrainee(username);
         log.info("Getting trainings for trainee username={}", username);
         return trainingMapper.toDtoList(traineeRepository.findTrainingsByUsername(username, fromDate, toDate, trainerName, trainingType));
     }
 
     @Override
-    public Optional<TraineeDto> updateTraineesTrainerList(TraineeDto traineeDto) {
-        validateUpdate(traineeDto);
-        if (credentialsMatchTrainee(traineeDto.getUsername(), traineeDto.getPassword())) {
-            log.info("Updating trainee trainer username={}", traineeDto.getUsername());
-            Trainee trainee = traineeMapper.toEntity(traineeDto);
-            Trainee updated = traineeRepository.updateTrainerList(trainee);
-            return Optional.of(traineeMapper.toDto(updated));
-        }
-        log.info("Can't update trainee trainer username={}", traineeDto.getUsername());
-        return Optional.empty();
+    public List<TrainerSummaryDto> updateTraineesTrainerList(String traineeUsername, List<String> trainerUsernames) {
+        requireText(traineeUsername, "username");
+        Trainee trainee = requireTrainee(traineeUsername);
+        log.info("Updating trainee trainer list username={}", traineeUsername);
+        Set<Trainer> trainers = resolveTrainers(trainerUsernames);
+        trainee.setTrainers(trainers);
+        return trainerMapper.toSummaryList(trainers);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<TraineeDto> getAllTrainees(String username, String password) {
-        getAuthenticatedTrainee(username, password);
+    public List<TraineeDto> getAllTrainees() {
         return traineeMapper.toDtoList(traineeRepository.findAll());
     }
 
-    private Trainee getAuthenticatedTrainee(String username, String password) {
+    private Trainee requireTrainee(String username) {
         return traineeRepository.findByUsername(username)
-                .filter(trainee -> trainee.getPassword().equals(password))
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Authentication failed for trainee username=" + username));
+                .orElseThrow(() -> new IllegalArgumentException("Trainee username=" + username + " not found"));
+    }
+
+    private Set<Trainer> resolveTrainers(List<String> trainerUsernames) {
+        if (trainerUsernames == null) {
+            return Set.of();
+        }
+        return trainerUsernames.stream()
+                .map(username -> trainerRepository.findByUsername(username)
+                        .orElseThrow(() -> new IllegalArgumentException("Trainer username=" + username + " not found")))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     private void validateCreate(TraineeDto traineeDto) {
         Objects.requireNonNull(traineeDto, "TraineeDto is required");
         requireText(traineeDto.getFirstName(), "firstName");
         requireText(traineeDto.getLastName(), "lastName");
-        Objects.requireNonNull(traineeDto.getDob(), "dob is required");
     }
 
     private void validateUpdate(TraineeDto traineeDto) {
         validateCreate(traineeDto);
-        Objects.requireNonNull(traineeDto.getId(), "id is required for update");
         requireText(traineeDto.getUsername(), "username");
-        requireText(traineeDto.getPassword(), "password");
     }
 
     private void requireText(String value, String fieldName) {

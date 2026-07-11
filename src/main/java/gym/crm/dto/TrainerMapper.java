@@ -30,6 +30,11 @@ public interface TrainerMapper {
 
     List<Trainer> toEntityList(List<TrainerDto> dtos);
 
+    @Mapping(target = "specialization", source = "specialization.type")
+    TrainerSummaryDto toSummary(Trainer trainer);
+
+    List<TrainerSummaryDto> toSummaryList(Set<Trainer> trainers);
+
     @Named("dtoToSpecialization")
     default TrainingTypeEntity dtoToSpecialization(TrainerDto dto) {
         if (dto.getSpecializationId() == null && dto.getSpecializationType() == null) {
