@@ -1,16 +1,15 @@
 package gym.crm.util;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.stereotype.Component;
 
 import java.security.SecureRandom;
 import java.util.function.Predicate;
 
+@Slf4j
 @Component
 public class CredentialsGenerator {
-    private static final Logger log = LoggerFactory.getLogger(CredentialsGenerator.class);
-
     private static final String DATA = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     private static final SecureRandom RANDOM = new SecureRandom();
 

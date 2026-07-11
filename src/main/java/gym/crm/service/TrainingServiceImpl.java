@@ -1,73 +1,69 @@
 package gym.crm.service;
 
-import gym.crm.dao.TraineeDao;
-import gym.crm.dao.TrainerDao;
-import gym.crm.dao.TrainingDao;
+import gym.crm.dto.TrainingDto;
+import gym.crm.dto.TrainingMapper;
 import gym.crm.model.Training;
-import gym.crm.model.TrainingType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import gym.crm.repository.TrainerRepository;
+import gym.crm.repository.TrainingRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
+import java.util.Objects;
 
+@Slf4j
 @Service
+@Transactional
 public class TrainingServiceImpl implements TrainingService {
-    private TrainingDao trainingDao;
-    private TraineeDao traineeDao;
-    private TrainerDao trainerDao;
+    private final TrainingRepository trainingRepository;
+    private final TrainerRepository trainerRepository;
+    private final TrainingMapper trainingMapper;
 
-    private static final Logger log = LoggerFactory.getLogger(TrainingServiceImpl.class);
-
-    @Autowired
-    public void setTrainingDao(TrainingDao trainingDao) {
-        this.trainingDao = trainingDao;
-    }
-
-    @Autowired
-    public void setTraineeDao(TraineeDao traineeDao) {
-        this.traineeDao = traineeDao;
-    }
-
-    @Autowired
-    public void setTrainerDao(TrainerDao trainerDao) {
-        this.trainerDao = trainerDao;
+    public TrainingServiceImpl(TrainingRepository trainingRepository, TrainerRepository trainerRepository,
+                               TrainingMapper trainingMapper) {
+        this.trainingRepository = trainingRepository;
+        this.trainerRepository = trainerRepository;
+        this.trainingMapper = trainingMapper;
     }
 
     @Override
-    public Training createTraining(Long traineeId, Long trainerId, String trainingName,
-                                   TrainingType trainingType, LocalDate trainingDate, int trainingDuration) {
-        if (!traineeDao.existsById(traineeId)) {
-            throw new IllegalArgumentException("Trainee not found: " + traineeId);
+    public TrainingDto createTraining(TrainingDto trainingDto, String trainerUsername, String trainerPassword) {
+        requireAuthenticatedTrainer(trainerUsername, trainerPassword);
+        validateCreate(trainingDto);
+        log.info("Creating training name={}", trainingDto.getName());
+        Training training = trainingMapper.toEntity(trainingDto);
+        Training saved = trainingRepository.save(training);
+        return trainingMapper.toDto(saved);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<TrainingDto> getAllTrainings(String trainerUsername, String trainerPassword) {
+        requireAuthenticatedTrainer(trainerUsername, trainerPassword);
+        log.info("Getting all trainings");
+        return trainingMapper.toDtoList(trainingRepository.findAllTrainings());
+    }
+
+    private void requireAuthenticatedTrainer(String username, String password) {
+        if (!trainerRepository.credentialsMatch(username, password)) {
+            throw new IllegalArgumentException("Authentication failed for trainer username=" + username);
         }
-        if (!trainerDao.existsById(trainerId)) {
-            throw new IllegalArgumentException("Trainer not found: " + trainerId);
+    }
+
+    private void validateCreate(TrainingDto trainingDto) {
+        Objects.requireNonNull(trainingDto, "TrainingDto is required");
+        if (trainingDto.getName() == null || trainingDto.getName().isBlank()) {
+            throw new IllegalArgumentException("name is required");
         }
-        Long id = nextId();
-        Training training = new Training(id, trainerId, traineeId, trainingName, trainingType, trainingDate, trainingDuration);
-        log.info("Creating training id={} name={}", id, trainingName);
-        return trainingDao.create(training);
-    }
-
-    @Override
-    public Optional<Training> getTraining(Long id) {
-        log.debug("Fetching training id={}", id);
-        return trainingDao.selectById(id);
-    }
-
-    @Override
-    public List<Training> getAllTrainings() {
-        log.debug("Fetching all trainings");
-        return trainingDao.selectAll();
-    }
-
-    private Long nextId() {
-        return trainingDao.selectAll().stream()
-                .mapToLong(Training::getId)
-                .max()
-                .orElse(0L) + 1;
+        Objects.requireNonNull(trainingDto.getDate(), "date is required");
+        if (trainingDto.getDuration() <= 0) {
+            throw new IllegalArgumentException("duration must be greater than 0");
+        }
+        Objects.requireNonNull(trainingDto.getTrainerId(), "trainer is required");
+        Objects.requireNonNull(trainingDto.getTraineeId(), "trainee is required");
+        if (trainingDto.getTrainingTypeId() == null && trainingDto.getTrainingType() == null) {
+            throw new NullPointerException("trainingType is required");
+        }
     }
 }

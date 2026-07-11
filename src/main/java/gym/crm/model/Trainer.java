@@ -1,19 +1,30 @@
 package gym.crm.model;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.util.Set;
 
 @Setter
 @Getter
 @ToString
+@Entity
+@Table(name = "trainers")
+@NoArgsConstructor
+@PrimaryKeyJoinColumn(name = "id")
 public class Trainer extends User {
-    private Long userId;
-    private TrainingType specialization;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "specialization_id")
+    private TrainingTypeEntity specialization;
+    @ManyToMany(mappedBy = "trainers")
+    @ToString.Exclude
+    private Set<Trainee> trainees;
+    @OneToMany(mappedBy = "trainer")
+    @ToString.Exclude
+    private Set<Training> trainings;
 
-    public Trainer(String firstName, String lastName, String username, String password, boolean isActive, Long userId, TrainingType specialization) {
+    public Trainer(String firstName, String lastName, String username, String password, boolean isActive, TrainingTypeEntity specialization) {
         super(firstName, lastName, username, password, isActive);
-        this.userId = userId;
         this.specialization = specialization;
     }
 }
