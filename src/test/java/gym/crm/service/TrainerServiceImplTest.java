@@ -4,6 +4,10 @@ import gym.crm.dto.TrainerDto;
 import gym.crm.dto.TrainerMapper;
 import gym.crm.dto.TrainingDto;
 import gym.crm.dto.TrainingMapper;
+import gym.crm.exception.AuthenticationFailedException;
+import gym.crm.exception.EntityNotFoundException;
+import gym.crm.exception.ProfileStatusException;
+import gym.crm.exception.ValidationException;
 import gym.crm.model.Trainer;
 import gym.crm.model.Training;
 import gym.crm.model.TrainingType;
@@ -87,7 +91,7 @@ class TrainerServiceImplTest {
         TrainerDto input = trainerDto(null, null);
         input.setSpecializationId(null);
         input.setSpecializationType(null);
-        assertThrows(NullPointerException.class, () -> service.createTrainerProfile(input));
+        assertThrows(ValidationException.class, () -> service.createTrainerProfile(input));
         verifyNoInteractions(trainerRepository);
     }
 
@@ -120,7 +124,7 @@ class TrainerServiceImplTest {
     @Test
     void changePasswordFailsWhenOldWrong() {
         when(trainerRepository.findByUsername("Ann.Lee")).thenReturn(Optional.of(trainer("Ann.Lee", "old", true)));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(AuthenticationFailedException.class,
                 () -> service.changePasswordTrainer("Ann.Lee", "bad", "new"));
         verify(trainerRepository, never()).changePassword(any(), any());
     }
@@ -128,7 +132,7 @@ class TrainerServiceImplTest {
     @Test
     void activateThrowsWhenAlreadyActive() {
         when(trainerRepository.findByUsername("Ann.Lee")).thenReturn(Optional.of(trainer("Ann.Lee", "pass", true)));
-        assertThrows(IllegalStateException.class, () -> service.activateTrainerProfile("Ann.Lee"));
+        assertThrows(ProfileStatusException.class, () -> service.activateTrainerProfile("Ann.Lee"));
         verify(trainerRepository, never()).setProfileActiveByUsername(any(), anyBoolean());
     }
 
@@ -171,7 +175,7 @@ class TrainerServiceImplTest {
     @Test
     void updateProfileRejectsMissingUsername() {
         TrainerDto dto = trainerDto(null, null);
-        assertThrows(IllegalArgumentException.class, () -> service.updateTrainerProfile(dto));
+        assertThrows(ValidationException.class, () -> service.updateTrainerProfile(dto));
         verify(trainerRepository, never()).findByUsername(any());
     }
 
@@ -179,7 +183,7 @@ class TrainerServiceImplTest {
     void updateProfileThrowsWhenTrainerMissing() {
         when(trainerRepository.findByUsername("ghost")).thenReturn(Optional.empty());
         TrainerDto dto = trainerDto("ghost", "pass");
-        assertThrows(IllegalArgumentException.class, () -> service.updateTrainerProfile(dto));
+        assertThrows(EntityNotFoundException.class, () -> service.updateTrainerProfile(dto));
     }
 
     @Test
@@ -197,7 +201,7 @@ class TrainerServiceImplTest {
     void getByUsernameThrowsWhenMissing() {
         when(trainerRepository.findByUsername("ghost")).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class, () -> service.getTrainerByUsername("ghost"));
+        assertThrows(EntityNotFoundException.class, () -> service.getTrainerByUsername("ghost"));
     }
 
     @Test

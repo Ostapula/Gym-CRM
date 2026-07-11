@@ -1,5 +1,6 @@
 package gym.crm.repository;
 
+import gym.crm.exception.EntityNotFoundException;
 import gym.crm.model.Trainer;
 import gym.crm.model.Training;
 import gym.crm.model.TrainingType;
@@ -178,7 +179,7 @@ class TrainerRepositoryImplTest {
         when(longQuery.setParameter("traineeUsername", "ghost")).thenReturn(longQuery);
         when(longQuery.getSingleResult()).thenReturn(0L);
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(EntityNotFoundException.class,
                 () -> repository.findTrainersNotAssignedToTraineeByUsername("ghost"));
     }
 }

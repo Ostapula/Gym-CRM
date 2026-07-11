@@ -1,5 +1,6 @@
 package gym.crm.repository;
 
+import gym.crm.exception.EntityNotFoundException;
 import gym.crm.model.Trainee;
 import gym.crm.model.Training;
 import gym.crm.model.TrainingType;
@@ -37,7 +38,7 @@ public class TraineeRepositoryImpl implements TraineeRepository {
     @Override
     public Trainee changePassword(String username, String newPassword) {
         Trainee trainee = findByUsername(username).orElseThrow(() ->
-                new IllegalArgumentException("Failed to change password. Trainee with username " + username + " does not exist."));
+                new EntityNotFoundException("Failed to change password. Trainee with username " + username + " does not exist."));
         trainee.setPassword(newPassword);
         return entityManager.merge(trainee);
     }
@@ -52,7 +53,7 @@ public class TraineeRepositoryImpl implements TraineeRepository {
     public boolean credentialsMatch(String username, String password) {
         return findByUsername(username)
                 .map(trainee -> trainee.getPassword().equals(password))
-                .orElseThrow(() -> new IllegalArgumentException(
+                .orElseThrow(() -> new EntityNotFoundException(
                         "Failed to check credentials. Trainee with username " + username + " does not exist."));
     }
 
@@ -78,14 +79,14 @@ public class TraineeRepositoryImpl implements TraineeRepository {
     @Override
     public void deleteByUsername(String username) {
         Trainee trainee = findByUsername(username).orElseThrow(() ->
-                new IllegalArgumentException("Failed to delete. Trainee with username " + username + " does not exist."));
+                new EntityNotFoundException("Failed to delete. Trainee with username " + username + " does not exist."));
         entityManager.remove(trainee);
     }
 
     @Override
     public void setProfileActiveByUsername(String username, boolean active) {
         Trainee trainee = findByUsername(username).orElseThrow(() ->
-                new IllegalArgumentException("Failed to set profile state. Trainee with username " + username + " does not exist."));
+                new EntityNotFoundException("Failed to set profile state. Trainee with username " + username + " does not exist."));
 
         trainee.setActive(active);
         entityManager.merge(trainee);
@@ -95,7 +96,7 @@ public class TraineeRepositoryImpl implements TraineeRepository {
     public List<Training> findTrainingsByUsername(String username, LocalDate fromDate, LocalDate toDate,
                                                   String trainerName, TrainingType trainingType) {
         if (findByUsername(username).isEmpty()) {
-            throw new IllegalArgumentException("Failed to find trainee with username " + username + " does not exist.");
+            throw new EntityNotFoundException("Failed to find trainee with username " + username + " does not exist.");
         }
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
@@ -131,7 +132,7 @@ public class TraineeRepositoryImpl implements TraineeRepository {
 
     private void requireExists(Long id) {
         if (!existsById(id)) {
-            throw new IllegalArgumentException("Failed to update. Trainee with id " + id + " does not exist.");
+            throw new EntityNotFoundException("Failed to update. Trainee with id " + id + " does not exist.");
         }
     }
 }

@@ -2,6 +2,7 @@ package gym.crm.controller;
 
 import gym.crm.dto.TraineeDto;
 import gym.crm.dto.TrainerSummaryDto;
+import gym.crm.exception.ProfileStatusException;
 import gym.crm.model.TrainingType;
 import gym.crm.service.TraineeService;
 import org.junit.jupiter.api.BeforeEach;
@@ -160,7 +161,7 @@ class TraineeControllerTest {
 
     @Test
     void setStatusReturnsConflictWhenAlreadyInState() throws Exception {
-        doThrow(new IllegalStateException("already active"))
+        doThrow(new ProfileStatusException("already active"))
                 .when(traineeService).activateTraineeProfile("John.Doe");
 
         mockMvc.perform(patch("/trainees/John.Doe/status").param("isActive", "true"))

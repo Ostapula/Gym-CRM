@@ -4,6 +4,10 @@ import gym.crm.dto.TrainerDto;
 import gym.crm.dto.TrainerMapper;
 import gym.crm.dto.TrainingDto;
 import gym.crm.dto.TrainingMapper;
+import gym.crm.exception.AuthenticationFailedException;
+import gym.crm.exception.EntityNotFoundException;
+import gym.crm.exception.ProfileStatusException;
+import gym.crm.exception.ValidationException;
 import gym.crm.model.Trainer;
 import gym.crm.model.TrainingTypeEntity;
 import gym.crm.repository.TrainerRepository;
@@ -88,7 +92,7 @@ public class TrainerServiceImpl implements TrainerService {
         requireText(oldPassword, "oldPassword");
         requireText(newPassword, "newPassword");
         if (!credentialsMatchTrainer(username, oldPassword)) {
-            throw new IllegalArgumentException("Authentication failed for trainer username=" + username);
+            throw new AuthenticationFailedException("Authentication failed for trainer username=" + username);
         }
         log.info("Changing password for trainer username={}", username);
         Trainer trainer = trainerRepository.changePassword(username, newPassword);
@@ -99,7 +103,7 @@ public class TrainerServiceImpl implements TrainerService {
     public void activateTrainerProfile(String username) {
         Trainer trainer = requireTrainer(username);
         if (trainer.isActive()) {
-            throw new IllegalStateException("Trainer profile is already active username=" + username);
+            throw new ProfileStatusException("Trainer profile is already active username=" + username);
         }
         log.info("Activating trainer profile username={}", username);
         trainerRepository.setProfileActiveByUsername(username, true);
@@ -109,7 +113,7 @@ public class TrainerServiceImpl implements TrainerService {
     public void deactivateTrainerProfile(String username) {
         Trainer trainer = requireTrainer(username);
         if (!trainer.isActive()) {
-            throw new IllegalStateException("Trainer profile is already inactive username=" + username);
+            throw new ProfileStatusException("Trainer profile is already inactive username=" + username);
         }
         log.info("Deactivating trainer profile username={}", username);
         trainerRepository.setProfileActiveByUsername(username, false);
@@ -134,19 +138,19 @@ public class TrainerServiceImpl implements TrainerService {
     private TrainingTypeEntity resolveSpecialization(TrainerDto trainerDto) {
         if (trainerDto.getSpecializationType() != null) {
             return trainingTypeRepository.findByType(trainerDto.getSpecializationType())
-                    .orElseThrow(() -> new IllegalArgumentException(
+                    .orElseThrow(() -> new EntityNotFoundException(
                             "Unknown training type " + trainerDto.getSpecializationType()));
         }
         return trainingTypeRepository.findAll().stream()
                 .filter(type -> type.getId().equals(trainerDto.getSpecializationId()))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException(
+                .orElseThrow(() -> new EntityNotFoundException(
                         "Unknown training type id " + trainerDto.getSpecializationId()));
     }
 
     private Trainer requireTrainer(String username) {
         return trainerRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("Trainer username=" + username + " not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Trainer username=" + username + " not found"));
     }
 
     private void validateCreate(TrainerDto trainerDto) {
@@ -154,7 +158,7 @@ public class TrainerServiceImpl implements TrainerService {
         requireText(trainerDto.getFirstName(), "firstName");
         requireText(trainerDto.getLastName(), "lastName");
         if (trainerDto.getSpecializationId() == null && trainerDto.getSpecializationType() == null) {
-            throw new NullPointerException("specialization is required");
+            throw new ValidationException("specialization is required");
         }
     }
 
@@ -167,7 +171,7 @@ public class TrainerServiceImpl implements TrainerService {
 
     private void requireText(String value, String fieldName) {
         if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException(fieldName + " is required");
+            throw new ValidationException(fieldName + " is required");
         }
     }
 }

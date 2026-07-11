@@ -2,6 +2,7 @@ package gym.crm.service;
 
 import gym.crm.dto.TrainingTypeEntityDto;
 import gym.crm.dto.TrainingTypeMapper;
+import gym.crm.exception.EntityNotFoundException;
 import gym.crm.model.TrainingType;
 import gym.crm.model.TrainingTypeEntity;
 import gym.crm.repository.TrainingTypeRepository;
@@ -28,7 +29,7 @@ public class TrainingTypeServiceImpl implements TrainingTypeService {
     public TrainingTypeEntityDto getByType(TrainingType type) {
         Objects.requireNonNull(type, "type is required");
         TrainingTypeEntity entity = trainingTypeRepository.findByType(type).orElseThrow(() ->
-                new IllegalArgumentException("Training type " + type + " is not configured."));
+                new EntityNotFoundException("Training type " + type + " is not configured."));
         return trainingTypeMapper.toDto(entity);
     }
 

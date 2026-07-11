@@ -1,6 +1,10 @@
 package gym.crm.service;
 
 import gym.crm.dto.*;
+import gym.crm.exception.AuthenticationFailedException;
+import gym.crm.exception.EntityNotFoundException;
+import gym.crm.exception.ProfileStatusException;
+import gym.crm.exception.ValidationException;
 import gym.crm.model.Trainee;
 import gym.crm.model.Trainer;
 import gym.crm.model.TrainingType;
@@ -88,7 +92,7 @@ public class TraineeServiceImpl implements TraineeService {
         requireText(oldPassword, "oldPassword");
         requireText(newPassword, "newPassword");
         if (!credentialsMatchTrainee(username, oldPassword)) {
-            throw new IllegalArgumentException("Authentication failed for trainee username=" + username);
+            throw new AuthenticationFailedException("Authentication failed for trainee username=" + username);
         }
         log.info("Changing password for trainee username={}", username);
         Trainee trainee = traineeRepository.changePassword(username, newPassword);
@@ -99,7 +103,7 @@ public class TraineeServiceImpl implements TraineeService {
     public void activateTraineeProfile(String username) {
         Trainee trainee = requireTrainee(username);
         if (trainee.isActive()) {
-            throw new IllegalStateException("Trainee profile is already active username=" + username);
+            throw new ProfileStatusException("Trainee profile is already active username=" + username);
         }
         log.info("Activating trainee profile username={}", username);
         traineeRepository.setProfileActiveByUsername(username, true);
@@ -109,7 +113,7 @@ public class TraineeServiceImpl implements TraineeService {
     public void deactivateTraineeProfile(String username) {
         Trainee trainee = requireTrainee(username);
         if (!trainee.isActive()) {
-            throw new IllegalStateException("Trainee profile is already inactive username=" + username);
+            throw new ProfileStatusException("Trainee profile is already inactive username=" + username);
         }
         log.info("Deactivating trainee profile username={}", username);
         traineeRepository.setProfileActiveByUsername(username, false);
@@ -149,7 +153,7 @@ public class TraineeServiceImpl implements TraineeService {
 
     private Trainee requireTrainee(String username) {
         return traineeRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("Trainee username=" + username + " not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Trainee username=" + username + " not found"));
     }
 
     private Set<Trainer> resolveTrainers(List<String> trainerUsernames) {
@@ -158,7 +162,7 @@ public class TraineeServiceImpl implements TraineeService {
         }
         return trainerUsernames.stream()
                 .map(username -> trainerRepository.findByUsername(username)
-                        .orElseThrow(() -> new IllegalArgumentException("Trainer username=" + username + " not found")))
+                        .orElseThrow(() -> new EntityNotFoundException("Trainer username=" + username + " not found")))
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
@@ -175,7 +179,7 @@ public class TraineeServiceImpl implements TraineeService {
 
     private void requireText(String value, String fieldName) {
         if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException(fieldName + " is required");
+            throw new ValidationException(fieldName + " is required");
         }
     }
 }

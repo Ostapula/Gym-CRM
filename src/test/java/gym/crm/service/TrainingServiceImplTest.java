@@ -3,6 +3,8 @@ package gym.crm.service;
 import gym.crm.dto.AddTrainingRequest;
 import gym.crm.dto.TrainingDto;
 import gym.crm.dto.TrainingMapper;
+import gym.crm.exception.EntityNotFoundException;
+import gym.crm.exception.ValidationException;
 import gym.crm.model.Trainee;
 import gym.crm.model.Trainer;
 import gym.crm.model.Training;
@@ -66,9 +68,9 @@ class TrainingServiceImplTest {
         return trainee;
     }
 
-    private Training training(int duration) {
+    private Training training() {
         return new Training(3L, trainer(), trainee(), "Morning cardio",
-                new TrainingTypeEntity(1, TrainingType.CARDIO), LocalDate.of(2024, 1, 1), duration);
+                new TrainingTypeEntity(1, TrainingType.CARDIO), LocalDate.of(2024, 1, 1), 30);
     }
 
     @Test
@@ -93,7 +95,7 @@ class TrainingServiceImplTest {
 
     @Test
     void createTrainingRejectsNonPositiveDuration() {
-        assertThrows(IllegalArgumentException.class, () -> service.createTraining(request(0)));
+        assertThrows(ValidationException.class, () -> service.createTraining(request(0)));
         verify(trainingRepository, never()).save(any());
     }
 
@@ -101,7 +103,7 @@ class TrainingServiceImplTest {
     void createTrainingThrowsWhenTrainerMissing() {
         when(trainerRepository.findByUsername("Ann.Lee")).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class, () -> service.createTraining(request(60)));
+        assertThrows(EntityNotFoundException.class, () -> service.createTraining(request(60)));
         verify(trainingRepository, never()).save(any());
     }
 
@@ -110,20 +112,20 @@ class TrainingServiceImplTest {
         when(trainerRepository.findByUsername("Ann.Lee")).thenReturn(Optional.of(trainer()));
         when(traineeRepository.findByUsername("John.Doe")).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class, () -> service.createTraining(request(60)));
+        assertThrows(EntityNotFoundException.class, () -> service.createTraining(request(60)));
         verify(trainingRepository, never()).save(any());
     }
 
     @Test
     void getAllTrainingsDelegates() {
-        when(trainingRepository.findAllTrainings()).thenReturn(List.of(training(30)));
+        when(trainingRepository.findAllTrainings()).thenReturn(List.of(training()));
 
         List<TrainingDto> result = service.getAllTrainings();
 
         assertEquals(1, result.size());
-        assertEquals(3L, result.get(0).getId());
-        assertEquals(2L, result.get(0).getTrainerId());
-        assertEquals(1L, result.get(0).getTraineeId());
-        assertEquals(TrainingType.CARDIO, result.get(0).getTrainingType());
+        assertEquals(3L, result.getFirst().getId());
+        assertEquals(2L, result.getFirst().getTrainerId());
+        assertEquals(1L, result.getFirst().getTraineeId());
+        assertEquals(TrainingType.CARDIO, result.getFirst().getTrainingType());
     }
 }

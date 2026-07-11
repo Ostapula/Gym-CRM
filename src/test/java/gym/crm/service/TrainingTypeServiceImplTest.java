@@ -2,6 +2,7 @@ package gym.crm.service;
 
 import gym.crm.dto.TrainingTypeEntityDto;
 import gym.crm.dto.TrainingTypeMapper;
+import gym.crm.exception.EntityNotFoundException;
 import gym.crm.model.TrainingType;
 import gym.crm.model.TrainingTypeEntity;
 import gym.crm.repository.TrainingTypeRepository;
@@ -46,7 +47,7 @@ class TrainingTypeServiceImplTest {
     void getByTypeThrowsWhenNotConfigured() {
         when(repository.findByType(TrainingType.MOBILITY)).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class, () -> service.getByType(TrainingType.MOBILITY));
+        assertThrows(EntityNotFoundException.class, () -> service.getByType(TrainingType.MOBILITY));
     }
 
     @Test
@@ -61,6 +62,6 @@ class TrainingTypeServiceImplTest {
         List<TrainingTypeEntityDto> result = service.getAll();
 
         assertEquals(2, result.size());
-        assertEquals(TrainingType.CARDIO, result.get(0).getType());
+        assertEquals(TrainingType.CARDIO, result.getFirst().getType());
     }
 }

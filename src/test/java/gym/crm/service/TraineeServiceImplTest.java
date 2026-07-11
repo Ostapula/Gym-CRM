@@ -6,6 +6,10 @@ import gym.crm.dto.TrainerMapper;
 import gym.crm.dto.TrainerSummaryDto;
 import gym.crm.dto.TrainingDto;
 import gym.crm.dto.TrainingMapper;
+import gym.crm.exception.AuthenticationFailedException;
+import gym.crm.exception.EntityNotFoundException;
+import gym.crm.exception.ProfileStatusException;
+import gym.crm.exception.ValidationException;
 import gym.crm.model.Trainee;
 import gym.crm.model.Trainer;
 import gym.crm.model.Training;
@@ -89,7 +93,7 @@ class TraineeServiceImplTest {
     void createRejectsBlankFirstName() {
         TraineeDto input = traineeDto(null, null);
         input.setFirstName("  ");
-        assertThrows(IllegalArgumentException.class, () -> service.createTraineeProfile(input));
+        assertThrows(ValidationException.class, () -> service.createTraineeProfile(input));
         verifyNoInteractions(traineeRepository);
     }
 
@@ -131,7 +135,7 @@ class TraineeServiceImplTest {
     @Test
     void updateRejectsMissingUsername() {
         TraineeDto dto = traineeDto(null, null);
-        assertThrows(IllegalArgumentException.class, () -> service.updateTraineeProfile(dto));
+        assertThrows(ValidationException.class, () -> service.updateTraineeProfile(dto));
         verify(traineeRepository, never()).findByUsername(any());
     }
 
@@ -139,7 +143,7 @@ class TraineeServiceImplTest {
     void updateThrowsWhenTraineeMissing() {
         when(traineeRepository.findByUsername("ghost")).thenReturn(Optional.empty());
         TraineeDto dto = traineeDto("ghost", "pass");
-        assertThrows(IllegalArgumentException.class, () -> service.updateTraineeProfile(dto));
+        assertThrows(EntityNotFoundException.class, () -> service.updateTraineeProfile(dto));
     }
 
     @Test
@@ -157,7 +161,7 @@ class TraineeServiceImplTest {
     void changePasswordFailsWhenOldPasswordWrong() {
         when(traineeRepository.findByUsername("John.Doe")).thenReturn(Optional.of(trainee("John.Doe", "old", true)));
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(AuthenticationFailedException.class,
                 () -> service.changePasswordTrainee("John.Doe", "wrong", "new"));
         verify(traineeRepository, never()).changePassword(any(), any());
     }
@@ -175,7 +179,7 @@ class TraineeServiceImplTest {
     void activateIsNotIdempotentAndThrowsWhenAlreadyActive() {
         when(traineeRepository.findByUsername("John.Doe")).thenReturn(Optional.of(trainee("John.Doe", "pass", true)));
 
-        assertThrows(IllegalStateException.class, () -> service.activateTraineeProfile("John.Doe"));
+        assertThrows(ProfileStatusException.class, () -> service.activateTraineeProfile("John.Doe"));
         verify(traineeRepository, never()).setProfileActiveByUsername(any(), anyBoolean());
     }
 
@@ -183,7 +187,7 @@ class TraineeServiceImplTest {
     void deactivateThrowsWhenAlreadyInactive() {
         when(traineeRepository.findByUsername("John.Doe")).thenReturn(Optional.of(trainee("John.Doe", "pass", false)));
 
-        assertThrows(IllegalStateException.class, () -> service.deactivateTraineeProfile("John.Doe"));
+        assertThrows(ProfileStatusException.class, () -> service.deactivateTraineeProfile("John.Doe"));
         verify(traineeRepository, never()).setProfileActiveByUsername(any(), anyBoolean());
     }
 
@@ -209,7 +213,7 @@ class TraineeServiceImplTest {
     void deleteThrowsWhenTraineeMissing() {
         when(traineeRepository.findByUsername("ghost")).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class, () -> service.deleteTraineeProfile("ghost"));
+        assertThrows(EntityNotFoundException.class, () -> service.deleteTraineeProfile("ghost"));
         verify(traineeRepository, never()).deleteByUsername(any());
     }
 
@@ -228,7 +232,7 @@ class TraineeServiceImplTest {
     void getByUsernameThrowsWhenMissing() {
         when(traineeRepository.findByUsername("ghost")).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class, () -> service.getTraineeByUsername("ghost"));
+        assertThrows(EntityNotFoundException.class, () -> service.getTraineeByUsername("ghost"));
     }
 
     @Test
@@ -283,7 +287,7 @@ class TraineeServiceImplTest {
         when(traineeRepository.findByUsername("John.Doe")).thenReturn(Optional.of(trainee("John.Doe", "pass", true)));
         when(trainerRepository.findByUsername("ghost")).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(EntityNotFoundException.class,
                 () -> service.updateTraineesTrainerList("John.Doe", List.of("ghost")));
     }
 }

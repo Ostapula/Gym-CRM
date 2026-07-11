@@ -3,6 +3,8 @@ package gym.crm.service;
 import gym.crm.dto.AddTrainingRequest;
 import gym.crm.dto.TrainingDto;
 import gym.crm.dto.TrainingMapper;
+import gym.crm.exception.EntityNotFoundException;
+import gym.crm.exception.ValidationException;
 import gym.crm.model.Trainee;
 import gym.crm.model.Trainer;
 import gym.crm.model.Training;
@@ -37,10 +39,10 @@ public class TrainingServiceImpl implements TrainingService {
     public void createTraining(AddTrainingRequest request) {
         validate(request);
         Trainer trainer = trainerRepository.findByUsername(request.getTrainerUsername())
-                .orElseThrow(() -> new IllegalArgumentException(
+                .orElseThrow(() -> new EntityNotFoundException(
                         "Trainer username=" + request.getTrainerUsername() + " not found"));
         Trainee trainee = traineeRepository.findByUsername(request.getTraineeUsername())
-                .orElseThrow(() -> new IllegalArgumentException(
+                .orElseThrow(() -> new EntityNotFoundException(
                         "Trainee username=" + request.getTraineeUsername() + " not found"));
 
         Training training = new Training();
@@ -70,13 +72,13 @@ public class TrainingServiceImpl implements TrainingService {
         requireText(request.getTrainingName(), "trainingName");
         Objects.requireNonNull(request.getTrainingDate(), "trainingDate is required");
         if (request.getTrainingDuration() <= 0) {
-            throw new IllegalArgumentException("trainingDuration must be greater than 0");
+            throw new ValidationException("trainingDuration must be greater than 0");
         }
     }
 
     private void requireText(String value, String fieldName) {
         if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException(fieldName + " is required");
+            throw new ValidationException(fieldName + " is required");
         }
     }
 }
