@@ -1,5 +1,6 @@
 package gym.crm.repository;
 
+import gym.crm.exception.EntityNotFoundException;
 import gym.crm.model.Trainer;
 import gym.crm.model.Training;
 import jakarta.persistence.EntityManager;
@@ -36,7 +37,7 @@ public class TrainerRepositoryImpl implements TrainerRepository {
     @Override
     public Trainer changePassword(String username, String newPassword) {
         Trainer trainer = findByUsername(username).orElseThrow(() ->
-                new IllegalArgumentException("Failed to change password. Trainer with username " + username + " does not exist."));
+                new EntityNotFoundException("Failed to change password. Trainer with username " + username + " does not exist."));
         trainer.setPassword(newPassword);
         return entityManager.merge(trainer);
     }
@@ -45,7 +46,7 @@ public class TrainerRepositoryImpl implements TrainerRepository {
     public boolean credentialsMatch(String username, String password) {
         return findByUsername(username)
                 .map(trainer -> trainer.getPassword().equals(password))
-                .orElseThrow(() -> new IllegalArgumentException(
+                .orElseThrow(() -> new EntityNotFoundException(
                         "Failed to check credentials. Trainer with username " + username + " does not exist."));
     }
 
@@ -65,7 +66,7 @@ public class TrainerRepositoryImpl implements TrainerRepository {
     @Override
     public void setProfileActiveByUsername(String username, boolean active) {
         Trainer trainer = findByUsername(username).orElseThrow(() ->
-                new IllegalArgumentException("Failed to set profile state. Trainer with username " + username + " does not exist."));
+                new EntityNotFoundException("Failed to set profile state. Trainer with username " + username + " does not exist."));
 
         trainer.setActive(active);
         entityManager.merge(trainer);
@@ -79,7 +80,7 @@ public class TrainerRepositoryImpl implements TrainerRepository {
     @Override
     public List<Training> findTrainingsByUsername(String username, LocalDate fromDate, LocalDate toDate, String traineeName) {
         if (findByUsername(username).isEmpty()) {
-            throw new IllegalArgumentException("Failed to find trainer with username " + username + " does not exist.");
+            throw new EntityNotFoundException("Failed to find trainer with username " + username + " does not exist.");
         }
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
@@ -112,7 +113,7 @@ public class TrainerRepositoryImpl implements TrainerRepository {
                 .setParameter("traineeUsername", traineeUsername)
                 .getSingleResult();
         if (traineeCount == 0) {
-            throw new IllegalArgumentException("Failed to find trainee with username " + traineeUsername + " does not exist.");
+            throw new EntityNotFoundException("Failed to find trainee with username " + traineeUsername + " does not exist.");
         }
 
         return entityManager.createQuery(
@@ -124,7 +125,7 @@ public class TrainerRepositoryImpl implements TrainerRepository {
 
     private void requireExists(Long id) {
         if (!existsById(id)) {
-            throw new IllegalArgumentException("Failed to update. Trainer with id " + id + " does not exist.");
+            throw new EntityNotFoundException("Failed to update. Trainer with id " + id + " does not exist.");
         }
     }
 }

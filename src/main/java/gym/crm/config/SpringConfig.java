@@ -11,12 +11,14 @@ import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 @Slf4j
 @Configuration
 @EnableTransactionManagement
 @ComponentScan(basePackages = "gym.crm")
 @PropertySource("classpath:application.properties")
+@EnableWebMvc
 public class SpringConfig {
     @Bean
     public static PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer() {

@@ -1,5 +1,6 @@
 package gym.crm.repository;
 
+import gym.crm.exception.EntityNotFoundException;
 import gym.crm.model.Trainee;
 import gym.crm.model.Training;
 import gym.crm.model.TrainingType;
@@ -129,7 +130,7 @@ class TraineeRepositoryImplTest {
         when(traineeQuery.setParameter("username", "ghost")).thenReturn(traineeQuery);
         when(traineeQuery.getSingleResult()).thenThrow(new NoResultException());
 
-        assertThrows(IllegalArgumentException.class, () -> repository.deleteByUsername("ghost"));
+        assertThrows(EntityNotFoundException.class, () -> repository.deleteByUsername("ghost"));
         verify(entityManager, never()).remove(any());
     }
 
@@ -148,7 +149,7 @@ class TraineeRepositoryImplTest {
         Trainee t = trainee("pass");
         when(entityManager.find(Trainee.class, 1L)).thenReturn(null);
 
-        assertThrows(IllegalArgumentException.class, () -> repository.update(t));
+        assertThrows(EntityNotFoundException.class, () -> repository.update(t));
         verify(entityManager, never()).merge(any());
     }
 
@@ -179,7 +180,7 @@ class TraineeRepositoryImplTest {
         when(traineeQuery.setParameter("username", "ghost")).thenReturn(traineeQuery);
         when(traineeQuery.getSingleResult()).thenThrow(new NoResultException());
 
-        assertThrows(IllegalArgumentException.class, () -> repository.credentialsMatch("ghost", "pass"));
+        assertThrows(EntityNotFoundException.class, () -> repository.credentialsMatch("ghost", "pass"));
     }
 
     @Test
@@ -230,7 +231,7 @@ class TraineeRepositoryImplTest {
         when(traineeQuery.setParameter("username", "ghost")).thenReturn(traineeQuery);
         when(traineeQuery.getSingleResult()).thenThrow(new NoResultException());
 
-        assertThrows(IllegalArgumentException.class, () -> repository.findTrainingsByUsername(
+        assertThrows(EntityNotFoundException.class, () -> repository.findTrainingsByUsername(
                 "ghost", null, null, null, TrainingType.CARDIO));
     }
 }
