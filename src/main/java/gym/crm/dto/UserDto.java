@@ -1,5 +1,8 @@
 package gym.crm.dto;
 
+import gym.crm.validation.OnCreate;
+import gym.crm.validation.OnUpdate;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,9 +14,16 @@ import lombok.Setter;
 @AllArgsConstructor
 public class UserDto {
     private Long id;
+
+    @NotBlank(message = "first name is required", groups = {OnCreate.class, OnUpdate.class})
     private String firstName;
+
+    @NotBlank(message = "last name is required", groups = {OnCreate.class, OnUpdate.class})
     private String lastName;
+
+    @NotBlank(message = "username is required", groups = OnUpdate.class)
     private String username;
+
     private String password;
     private boolean active;
 

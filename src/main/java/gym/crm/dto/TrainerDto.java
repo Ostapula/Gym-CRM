@@ -1,6 +1,8 @@
 package gym.crm.dto;
 
 import gym.crm.model.TrainingType;
+import gym.crm.validation.OnCreate;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,6 +16,8 @@ import java.util.Set;
 @AllArgsConstructor
 public class TrainerDto extends UserDto {
     private Integer specializationId;
+
+    @NotNull(message = "specialization is required", groups = OnCreate.class)
     private TrainingType specializationType;
     private Set<Long> traineeIds;
     private Set<Long> trainingIds;

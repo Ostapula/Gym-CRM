@@ -47,6 +47,7 @@ public class TraineeServiceImpl implements TraineeService {
         String username = credentialsGenerator.generateUsername(traineeDto.getFirstName(), traineeDto.getLastName(),
                 t -> traineeRepository.findByUsername(t).isPresent());
         String password = credentialsGenerator.generatePassword();
+        traineeDto.setActive(true);
         traineeDto.setUsername(username);
         traineeDto.setPassword(password);
         log.info("Creating trainee profile username={}", username);

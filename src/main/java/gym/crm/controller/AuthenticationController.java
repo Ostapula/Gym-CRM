@@ -1,5 +1,6 @@
 package gym.crm.controller;
 
+import gym.crm.exception.AuthenticationFailedException;
 import gym.crm.service.AuthenticationService;
 import gym.crm.service.TraineeService;
 import gym.crm.service.TrainerService;
@@ -9,6 +10,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.http.HttpStatus;
@@ -37,17 +40,14 @@ public class AuthenticationController {
             @ApiResponse(responseCode = "401", description = "Credentials do not match")
     })
     @GetMapping
-    public ResponseEntity<?> login(@RequestParam(name = "username", required = false) String username,
-                                      @RequestParam(name = "password", required = false) String password) {
-        if (isBlank(username) || isBlank(password)) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+    public ResponseEntity<?> login(
+            @NotBlank(message = "username is required") @RequestParam(name = "username", required = false) String username,
+            @NotBlank(message = "password is required") @RequestParam(name = "password", required = false) String password) {
+        if (!authenticationService.matches(username, password)) {
+            throw new AuthenticationFailedException("Credentials do not match");
         }
 
-        if (authenticationService.matches(username, password)){
-            return new ResponseEntity<>(HttpStatus.OK);
-        }
-
-        return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @Operation(summary = "Change password", description = "Changes the password after verifying the current (old) password.")
@@ -60,11 +60,7 @@ public class AuthenticationController {
     public ResponseEntity<?> changePassword(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Username, current and new password", required = true,
                     content = @Content(schema = @Schema(implementation = ChangePassword.class)))
-            @RequestBody ChangePassword changePassword) {
-        if (isBlank(changePassword.getUsername()) || isBlank(changePassword.getOldPassword())
-                || isBlank(changePassword.getNewPassword())) {
-            return ResponseEntity.badRequest().build();
-        }
+            @Valid @RequestBody ChangePassword changePassword) {
         if (traineeService.credentialsMatchTrainee(changePassword.getUsername(), changePassword.getOldPassword())) {
             traineeService.changePasswordTrainee(changePassword.getUsername(),
                     changePassword.getOldPassword(), changePassword.getNewPassword());
@@ -72,20 +68,19 @@ public class AuthenticationController {
             trainerService.changePasswordTrainer(changePassword.getUsername(),
                     changePassword.getOldPassword(), changePassword.getNewPassword());
         } else {
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+            throw new AuthenticationFailedException("Credentials do not match");
         }
         return new ResponseEntity<>(HttpStatus.OK);
-    }
-
-    private static boolean isBlank(String value) {
-        return value == null || value.isBlank();
     }
 
     @Getter
     @Setter
     private static class ChangePassword {
+        @NotBlank(message = "username is required")
         private String username;
+        @NotBlank(message = "oldPassword is required")
         private String oldPassword;
+        @NotBlank(message = "newPassword is required")
         private String newPassword;
     }
 }

@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -35,10 +36,10 @@ public class TrainingController {
                     schema = @Schema(implementation = ErrorMessage.class)))
     })
     @PostMapping
-    public ResponseEntity<?> addTraining(
+    public ResponseEntity<Void> addTraining(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Training to create", required = true,
                     content = @Content(schema = @Schema(implementation = AddTrainingRequest.class)))
-            @RequestBody AddTrainingRequest request) {
+            @Valid @RequestBody AddTrainingRequest request) {
         trainingService.createTraining(request);
         return new ResponseEntity<>(HttpStatus.OK);
     }

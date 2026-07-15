@@ -48,6 +48,7 @@ public class TrainerServiceImpl implements TrainerService {
         String username = credentialsGenerator.generateUsername(trainerDto.getFirstName(), trainerDto.getLastName(),
                 t -> trainerRepository.findByUsername(t).isPresent());
         String password = credentialsGenerator.generatePassword();
+        trainerDto.setActive(true);
         trainerDto.setUsername(username);
         trainerDto.setPassword(password);
         log.info("Creating trainer profile username={}", username);
