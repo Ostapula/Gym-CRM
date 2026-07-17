@@ -12,6 +12,7 @@ import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
@@ -65,6 +66,12 @@ public class GlobalExceptionHandler {
         String description = ex.getAllErrors().stream()
                 .map(MessageSourceResolvable::getDefaultMessage)
                 .collect(Collectors.joining("; "));
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex, description);
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorMessage> handleMissingServletRequestParameter(MissingServletRequestParameterException ex) {
+        String description = String.format("Missing required parameter: %s", ex.getParameterName());
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ex, description);
     }
 

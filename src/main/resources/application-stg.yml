@@ -1,0 +1,16 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://stg-db:5432/gym_stg}
+    username: ${DB_USERNAME:gym_stg}
+    password: ${DB_PASSWORD:gym_stg_pwd}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      pool-name: gym-stg-pool
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect

@@ -5,6 +5,7 @@ import gym.crm.dto.TrainingDto;
 import gym.crm.dto.TrainingMapper;
 import gym.crm.exception.EntityNotFoundException;
 import gym.crm.exception.ValidationException;
+import gym.crm.metrics.GymMetricsRecorder;
 import gym.crm.model.Trainee;
 import gym.crm.model.Trainer;
 import gym.crm.model.Training;
@@ -26,13 +27,16 @@ public class TrainingServiceImpl implements TrainingService {
     private final TrainerRepository trainerRepository;
     private final TraineeRepository traineeRepository;
     private final TrainingMapper trainingMapper;
+    private final GymMetricsRecorder metricsRecorder;
 
     public TrainingServiceImpl(TrainingRepository trainingRepository, TrainerRepository trainerRepository,
-                               TraineeRepository traineeRepository, TrainingMapper trainingMapper) {
+                               TraineeRepository traineeRepository, TrainingMapper trainingMapper,
+                               GymMetricsRecorder metricsRecorder) {
         this.trainingRepository = trainingRepository;
         this.trainerRepository = trainerRepository;
         this.traineeRepository = traineeRepository;
         this.trainingMapper = trainingMapper;
+        this.metricsRecorder = metricsRecorder;
     }
 
     @Override
@@ -56,6 +60,7 @@ public class TrainingServiceImpl implements TrainingService {
         log.info("Creating training name={} trainer={} trainee={}", request.getTrainingName(),
                 request.getTrainerUsername(), request.getTraineeUsername());
         trainingRepository.save(training);
+        metricsRecorder.recordTrainingCreated();
     }
 
     @Override

@@ -1,0 +1,23 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://prod-db:5432/gym_prod}
+    username: ${DB_USERNAME:gym_prod}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      pool-name: gym-prod-pool
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+management:
+  endpoint:
+    health:
+      show-details: when-authorized
+      show-components: when-authorized

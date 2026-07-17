@@ -7,6 +7,7 @@ import gym.crm.exception.ProfileStatusException;
 import gym.crm.exception.ValidationException;
 import gym.crm.model.Trainee;
 import gym.crm.model.Trainer;
+import gym.crm.metrics.GymMetricsRecorder;
 import gym.crm.model.TrainingType;
 import gym.crm.repository.TraineeRepository;
 import gym.crm.repository.TrainerRepository;
@@ -29,16 +30,19 @@ public class TraineeServiceImpl implements TraineeService {
     private final TraineeMapper traineeMapper;
     private final TrainerMapper trainerMapper;
     private final TrainingMapper trainingMapper;
+    private final GymMetricsRecorder metricsRecorder;
 
     public TraineeServiceImpl(TraineeRepository traineeRepository, TrainerRepository trainerRepository,
                               CredentialsGenerator credentialsGenerator, TraineeMapper traineeMapper,
-                              TrainerMapper trainerMapper, TrainingMapper trainingMapper) {
+                              TrainerMapper trainerMapper, TrainingMapper trainingMapper,
+                              GymMetricsRecorder metricsRecorder) {
         this.traineeRepository = traineeRepository;
         this.trainerRepository = trainerRepository;
         this.credentialsGenerator = credentialsGenerator;
         this.traineeMapper = traineeMapper;
         this.trainerMapper = trainerMapper;
         this.trainingMapper = trainingMapper;
+        this.metricsRecorder = metricsRecorder;
     }
 
     @Override
@@ -53,6 +57,7 @@ public class TraineeServiceImpl implements TraineeService {
         log.info("Creating trainee profile username={}", username);
         Trainee trainee = traineeMapper.toEntity(traineeDto);
         Trainee created = traineeRepository.create(trainee);
+        metricsRecorder.recordTraineeRegistered();
         return traineeMapper.toDto(created);
     }
 

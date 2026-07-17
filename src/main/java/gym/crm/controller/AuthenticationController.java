@@ -41,8 +41,8 @@ public class AuthenticationController {
     })
     @GetMapping
     public ResponseEntity<?> login(
-            @NotBlank(message = "username is required") @RequestParam(name = "username", required = false) String username,
-            @NotBlank(message = "password is required") @RequestParam(name = "password", required = false) String password) {
+            @NotBlank(message = "username is required") @RequestParam(name = "username") String username,
+            @NotBlank(message = "password is required") @RequestParam(name = "password") String password) {
         if (!authenticationService.matches(username, password)) {
             throw new AuthenticationFailedException("Credentials do not match");
         }

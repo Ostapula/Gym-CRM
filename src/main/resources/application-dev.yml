@@ -1,0 +1,16 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/gym_dev
+    username: gym_dev
+    password: gym_dev_pwd
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5
+      pool-name: gym-dev-pool
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
