@@ -39,8 +39,8 @@ public class AuthenticationController {
             @ApiResponse(responseCode = "400", description = "Username or password missing"),
             @ApiResponse(responseCode = "401", description = "Credentials do not match")
     })
-    @GetMapping
-    public ResponseEntity<?> login(
+    @PostMapping
+    public ResponseEntity<Void> login(
             @NotBlank(message = "username is required") @RequestParam(name = "username") String username,
             @NotBlank(message = "password is required") @RequestParam(name = "password") String password) {
         if (!authenticationService.matches(username, password)) {
@@ -57,7 +57,7 @@ public class AuthenticationController {
             @ApiResponse(responseCode = "401", description = "Old credentials do not match")
     })
     @PutMapping(value = "/change-password", consumes = {"application/json"})
-    public ResponseEntity<?> changePassword(
+    public ResponseEntity<Void> changePassword(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Username, current and new password", required = true,
                     content = @Content(schema = @Schema(implementation = ChangePassword.class)))
             @Valid @RequestBody ChangePassword changePassword) {

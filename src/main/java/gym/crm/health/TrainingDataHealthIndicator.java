@@ -21,8 +21,8 @@ public class TrainingDataHealthIndicator implements HealthIndicator {
     @Override
     public Health health() {
         try {
-            int trainees = traineeRepository.findAll().size();
-            int trainings = trainingRepository.findAllTrainings().size();
+            int trainees = traineeRepository.countAll();
+            int trainings = trainingRepository.countAll();
             return Health.up()
                     .withDetail("trainees", trainees)
                     .withDetail("trainings", trainings)

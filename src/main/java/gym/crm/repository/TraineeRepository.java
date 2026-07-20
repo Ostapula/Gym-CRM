@@ -21,4 +21,5 @@ public interface TraineeRepository {
     List<Training> findTrainingsByUsername(String username, LocalDate fromDate, LocalDate toDate,
                                           String trainerName, TrainingType trainingType);
     boolean existsById(Long id);
+    int countAll();
 }

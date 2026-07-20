@@ -22,4 +22,9 @@ public class TrainingRepositoryImpl implements TrainingRepository {
     public List<Training> findAllTrainings() {
         return entityManager.createNamedQuery("Training.findAll", Training.class).getResultList();
     }
+
+    @Override
+    public int countAll() {
+        return ((Number) entityManager.createQuery("SELECT COUNT(t) FROM Training t").getSingleResult()).intValue();
+    }
 }

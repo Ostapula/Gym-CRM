@@ -130,6 +130,11 @@ public class TraineeRepositoryImpl implements TraineeRepository {
         return entityManager.find(Trainee.class, id) != null;
     }
 
+    @Override
+    public int countAll() {
+        return ((Number) entityManager.createQuery("SELECT COUNT(t) FROM Trainee t").getSingleResult()).intValue();
+    }
+
     private void requireExists(Long id) {
         if (!existsById(id)) {
             throw new EntityNotFoundException("Failed to update. Trainee with id " + id + " does not exist.");

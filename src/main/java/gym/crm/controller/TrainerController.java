@@ -63,10 +63,8 @@ public class TrainerController {
     })
     @GetMapping
     public ResponseEntity<TrainerDto> getTrainer(@RequestParam String username) {
-        TrainerDto trainerDto = trainerService.getTrainerByUsername(username).orElse(null);
-        if (trainerDto == null) {
-            throw new EntityNotFoundException("Trainer not found");
-        }
+        TrainerDto trainerDto = trainerService.getTrainerByUsername(username)
+                .orElseThrow(() -> new EntityNotFoundException("Trainer not found"));
         return new ResponseEntity<>(trainerDto, HttpStatus.OK);
     }
 
@@ -86,10 +84,8 @@ public class TrainerController {
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Trainer fields to update", required = true,
                     content = @Content(schema = @Schema(implementation = TrainerDto.class)))
             @Validated(OnUpdate.class) @RequestBody TrainerDto trainerDto) {
-        TrainerDto updatedTrainerDto = trainerService.updateTrainerProfile(trainerDto).orElse(null);
-        if (updatedTrainerDto == null) {
-            throw new EntityNotFoundException("Trainer not found");
-        }
+        TrainerDto updatedTrainerDto = trainerService.updateTrainerProfile(trainerDto)
+                .orElseThrow(() -> new EntityNotFoundException("Trainer not found"));
         return new ResponseEntity<>(updatedTrainerDto, HttpStatus.OK);
     }
 

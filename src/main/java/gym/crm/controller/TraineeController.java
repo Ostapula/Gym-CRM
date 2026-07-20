@@ -62,10 +62,8 @@ public class TraineeController {
     })
     @GetMapping
     public ResponseEntity<TraineeDto> getTrainee(@RequestParam String username) {
-        TraineeDto traineeDto = traineeService.getTraineeByUsername(username).orElse(null);
-        if (traineeDto == null) {
-            throw new EntityNotFoundException("Trainee not found");
-        }
+        TraineeDto traineeDto = traineeService.getTraineeByUsername(username)
+                .orElseThrow(() -> new EntityNotFoundException("Trainee not found"));
         traineeDto.setTrainings(null);
         return new ResponseEntity<>(traineeDto, HttpStatus.OK);
     }
@@ -86,10 +84,8 @@ public class TraineeController {
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Trainee fields to update", required = true,
                     content = @Content(schema = @Schema(implementation = TraineeDto.class)))
             @Validated(OnUpdate.class) @RequestBody TraineeDto traineeDto) {
-        TraineeDto updatedTraineeDto = traineeService.updateTraineeProfile(traineeDto).orElse(null);
-        if (updatedTraineeDto == null) {
-            throw new EntityNotFoundException("Trainee not found");
-        }
+        TraineeDto updatedTraineeDto = traineeService.updateTraineeProfile(traineeDto)
+                .orElseThrow(() -> new EntityNotFoundException("Trainee not found"));
         updatedTraineeDto.setTrainings(null);
         return new ResponseEntity<>(updatedTraineeDto, HttpStatus.OK);
     }
