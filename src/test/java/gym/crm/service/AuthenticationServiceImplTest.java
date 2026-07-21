@@ -17,6 +17,8 @@ class AuthenticationServiceImplTest {
     private TraineeService traineeService;
     @Mock
     private TrainerService trainerService;
+    @Mock
+    private gym.crm.metrics.GymMetricsRecorder metricsRecorder;
     @InjectMocks
     private AuthenticationServiceImpl service;
 

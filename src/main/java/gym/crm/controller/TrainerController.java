@@ -4,7 +4,10 @@ import gym.crm.dto.ErrorMessage;
 import gym.crm.dto.LoginDto;
 import gym.crm.dto.TrainerDto;
 import gym.crm.dto.TrainingDto;
+import gym.crm.exception.EntityNotFoundException;
 import gym.crm.service.TrainerService;
+import gym.crm.validation.OnCreate;
+import gym.crm.validation.OnUpdate;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -14,9 +17,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Tag(name = "Trainer", description = "Trainer registration and profile management")
 @RestController
@@ -36,14 +41,10 @@ public class TrainerController {
                     schema = @Schema(implementation = ErrorMessage.class)))
     })
     @PostMapping
-    public ResponseEntity<?> createTrainer(
+    public ResponseEntity<LoginDto> createTrainer(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Trainer to register", required = true,
                     content = @Content(schema = @Schema(implementation = TrainerDto.class)))
-            @RequestBody TrainerDto trainerDto) {
-        if (trainerDto.getFirstName() == null || trainerDto.getLastName() == null || trainerDto.getSpecializationType() == null) {
-            return new ResponseEntity<>(new ErrorMessage(400, "Invalid input", ""), HttpStatus.BAD_REQUEST);
-        }
-        trainerDto.setActive(true);
+            @Validated(OnCreate.class) @RequestBody TrainerDto trainerDto) {
         TrainerDto newTrainerDto = trainerService.createTrainerProfile(trainerDto);
         LoginDto loginDto = new LoginDto();
         loginDto.setUsername(newTrainerDto.getUsername());
@@ -61,11 +62,9 @@ public class TrainerController {
                     schema = @Schema(implementation = ErrorMessage.class)))
     })
     @GetMapping
-    public ResponseEntity<?> getTrainer(@RequestParam String username) {
-        TrainerDto trainerDto = trainerService.getTrainerByUsername(username).orElse(null);
-        if (trainerDto == null) {
-            return new ResponseEntity<>(new ErrorMessage(404, "Not Found", "Trainer not found"), HttpStatus.NOT_FOUND);
-        }
+    public ResponseEntity<TrainerDto> getTrainer(@RequestParam String username) {
+        TrainerDto trainerDto = trainerService.getTrainerByUsername(username)
+                .orElseThrow(() -> new EntityNotFoundException("Trainer not found"));
         return new ResponseEntity<>(trainerDto, HttpStatus.OK);
     }
 
@@ -81,17 +80,12 @@ public class TrainerController {
                     schema = @Schema(implementation = ErrorMessage.class)))
     })
     @PutMapping(consumes = {"application/json"})
-    public ResponseEntity<?> updateTrainer(
+    public ResponseEntity<TrainerDto> updateTrainer(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Trainer fields to update", required = true,
                     content = @Content(schema = @Schema(implementation = TrainerDto.class)))
-            @RequestBody TrainerDto trainerDto) {
-        if (trainerDto.getUsername() == null || trainerDto.getFirstName() == null || trainerDto.getLastName() == null) {
-            return new ResponseEntity<>(new ErrorMessage(400, "Bad Request", "Username, first name, and last name are required"), HttpStatus.BAD_REQUEST);
-        }
-        TrainerDto updatedTrainerDto = trainerService.updateTrainerProfile(trainerDto).orElse(null);
-        if (updatedTrainerDto == null) {
-            return new ResponseEntity<>(new ErrorMessage(404, "Not Found", "Trainer not found"), HttpStatus.NOT_FOUND);
-        }
+            @Validated(OnUpdate.class) @RequestBody TrainerDto trainerDto) {
+        TrainerDto updatedTrainerDto = trainerService.updateTrainerProfile(trainerDto)
+                .orElseThrow(() -> new EntityNotFoundException("Trainer not found"));
         return new ResponseEntity<>(updatedTrainerDto, HttpStatus.OK);
     }
 
@@ -105,7 +99,7 @@ public class TrainerController {
                     schema = @Schema(implementation = ErrorMessage.class)))
     })
     @GetMapping("/not-assigned")
-    public ResponseEntity<?> getTrainersNotAssignedToTraineeByUsername(@RequestParam String username) {
+    public ResponseEntity<List<TrainerDto>> getTrainersNotAssignedToTraineeByUsername(@RequestParam String username) {
         return new ResponseEntity<>(trainerService.getTrainersNotAssignedToTraineeByUsername(username), HttpStatus.OK);
     }
 
@@ -119,7 +113,7 @@ public class TrainerController {
                     schema = @Schema(implementation = ErrorMessage.class)))
     })
     @GetMapping(value = "{username}/trainings")
-    public ResponseEntity<?> getTrainings(@PathVariable String username, @RequestParam(required = false) LocalDate fromDate,
+    public ResponseEntity<List<TrainingDto>> getTrainings(@PathVariable String username, @RequestParam(required = false) LocalDate fromDate,
                                           @RequestParam(required = false) LocalDate toDate, @RequestParam(required = false) String traineeName) {
         var trainings = trainerService.getTrainingsByUsername(username, fromDate, toDate, traineeName);
         return new ResponseEntity<>(trainings, HttpStatus.OK);
@@ -136,7 +130,7 @@ public class TrainerController {
                     schema = @Schema(implementation = ErrorMessage.class)))
     })
     @PatchMapping(value = "{username}/status")
-    public ResponseEntity<?> setStatus(@PathVariable String username, @RequestParam(name = "isActive") boolean isActive) {
+    public ResponseEntity<Void> setStatus(@PathVariable String username, @RequestParam(name = "isActive") boolean isActive) {
         if (isActive) {
             trainerService.activateTrainerProfile(username);
         } else {

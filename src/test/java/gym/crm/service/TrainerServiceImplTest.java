@@ -45,6 +45,8 @@ class TrainerServiceImplTest {
     private TrainerMapper trainerMapper = Mappers.getMapper(TrainerMapper.class);
     @Spy
     private TrainingMapper trainingMapper = Mappers.getMapper(TrainingMapper.class);
+    @Mock
+    private gym.crm.metrics.GymMetricsRecorder metricsRecorder;
     @InjectMocks
     private TrainerServiceImpl service;
 

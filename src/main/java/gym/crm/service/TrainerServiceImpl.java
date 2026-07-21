@@ -8,6 +8,7 @@ import gym.crm.exception.AuthenticationFailedException;
 import gym.crm.exception.EntityNotFoundException;
 import gym.crm.exception.ProfileStatusException;
 import gym.crm.exception.ValidationException;
+import gym.crm.metrics.GymMetricsRecorder;
 import gym.crm.model.Trainer;
 import gym.crm.model.TrainingTypeEntity;
 import gym.crm.repository.TrainerRepository;
@@ -31,15 +32,17 @@ public class TrainerServiceImpl implements TrainerService {
     private final CredentialsGenerator credentialsGenerator;
     private final TrainerMapper trainerMapper;
     private final TrainingMapper trainingMapper;
+    private final GymMetricsRecorder metricsRecorder;
 
     public TrainerServiceImpl(TrainerRepository trainerRepository, TrainingTypeRepository trainingTypeRepository,
                               CredentialsGenerator credentialsGenerator, TrainerMapper trainerMapper,
-                              TrainingMapper trainingMapper) {
+                              TrainingMapper trainingMapper, GymMetricsRecorder metricsRecorder) {
         this.trainerRepository = trainerRepository;
         this.trainingTypeRepository = trainingTypeRepository;
         this.credentialsGenerator = credentialsGenerator;
         this.trainerMapper = trainerMapper;
         this.trainingMapper = trainingMapper;
+        this.metricsRecorder = metricsRecorder;
     }
 
     @Override
@@ -48,12 +51,14 @@ public class TrainerServiceImpl implements TrainerService {
         String username = credentialsGenerator.generateUsername(trainerDto.getFirstName(), trainerDto.getLastName(),
                 t -> trainerRepository.findByUsername(t).isPresent());
         String password = credentialsGenerator.generatePassword();
+        trainerDto.setActive(true);
         trainerDto.setUsername(username);
         trainerDto.setPassword(password);
         log.info("Creating trainer profile username={}", username);
         Trainer trainer = trainerMapper.toEntity(trainerDto);
         trainer.setSpecialization(resolveSpecialization(trainerDto));
         Trainer created = trainerRepository.create(trainer);
+        metricsRecorder.recordTrainerRegistered();
         return trainerMapper.toDto(created);
     }
 
