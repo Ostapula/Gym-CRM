@@ -13,12 +13,13 @@ import org.springframework.context.annotation.Configuration;
                 title = "Gym CRM API",
                 version = "1.0",
                 description = "REST API for managing trainees, trainers and trainings. "
-                        + "All endpoints except trainee/trainer registration and login require HTTP Basic authentication."),
-        security = @SecurityRequirement(name = "basicAuth"))
+                        + "All endpoints except trainee/trainer registration and login require HTTP Bearer authentication."),
+        security = @SecurityRequirement(name = "Bearer Authentication"))
 @SecurityScheme(
-        name = "basicAuth",
+        name = "Bearer Authentication",
         type = SecuritySchemeType.HTTP,
-        scheme = "basic",
-        description = "Trainee or trainer username and password")
+        scheme = "bearer",
+        bearerFormat = "JWT",
+        description = "A JWT token is required to access this API")
 public class OpenApiConfig {
 }

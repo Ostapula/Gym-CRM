@@ -15,6 +15,7 @@ import gym.crm.repository.TrainerRepository;
 import gym.crm.repository.TrainingTypeRepository;
 import gym.crm.util.CredentialsGenerator;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,16 +34,19 @@ public class TrainerServiceImpl implements TrainerService {
     private final TrainerMapper trainerMapper;
     private final TrainingMapper trainingMapper;
     private final GymMetricsRecorder metricsRecorder;
+    private final PasswordEncoder passwordEncoder;
 
     public TrainerServiceImpl(TrainerRepository trainerRepository, TrainingTypeRepository trainingTypeRepository,
                               CredentialsGenerator credentialsGenerator, TrainerMapper trainerMapper,
-                              TrainingMapper trainingMapper, GymMetricsRecorder metricsRecorder) {
+                              TrainingMapper trainingMapper, GymMetricsRecorder metricsRecorder,
+                              PasswordEncoder passwordEncoder) {
         this.trainerRepository = trainerRepository;
         this.trainingTypeRepository = trainingTypeRepository;
         this.credentialsGenerator = credentialsGenerator;
         this.trainerMapper = trainerMapper;
         this.trainingMapper = trainingMapper;
         this.metricsRecorder = metricsRecorder;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -53,13 +57,15 @@ public class TrainerServiceImpl implements TrainerService {
         String password = credentialsGenerator.generatePassword();
         trainerDto.setActive(true);
         trainerDto.setUsername(username);
-        trainerDto.setPassword(password);
+        trainerDto.setPassword(passwordEncoder.encode(password));
         log.info("Creating trainer profile username={}", username);
         Trainer trainer = trainerMapper.toEntity(trainerDto);
         trainer.setSpecialization(resolveSpecialization(trainerDto));
         Trainer created = trainerRepository.create(trainer);
         metricsRecorder.recordTrainerRegistered();
-        return trainerMapper.toDto(created);
+        TrainerDto result = trainerMapper.toDto(created);
+        result.setPassword(password);
+        return result;
     }
 
     @Override
@@ -67,7 +73,7 @@ public class TrainerServiceImpl implements TrainerService {
     public boolean credentialsMatchTrainer(String username, String password) {
         Optional<Trainer> trainerOpt = trainerRepository.findByUsername(username);
         if (trainerOpt.isPresent()) {
-            return trainerOpt.get().getPassword().equals(password);
+            return passwordEncoder.matches(password, trainerOpt.get().getPassword());
         }
         log.info("Credentials do not match trainer username={}", username);
         return false;
@@ -100,7 +106,7 @@ public class TrainerServiceImpl implements TrainerService {
             throw new AuthenticationFailedException("Authentication failed for trainer username=" + username);
         }
         log.info("Changing password for trainer username={}", username);
-        Trainer trainer = trainerRepository.changePassword(username, newPassword);
+        Trainer trainer = trainerRepository.changePassword(username, passwordEncoder.encode(newPassword));
         return trainerMapper.toDto(trainer);
     }
 

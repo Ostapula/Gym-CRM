@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Authentication", description = "Login and password management")
 @RestController
-@RequestMapping(value = "/login", produces = {"application/json"})
+@RequestMapping(value = "/auth", produces = {"application/json"})
 public class AuthenticationController {
     private final AuthenticationService authenticationService;
     private final TraineeService traineeService;
@@ -39,15 +39,24 @@ public class AuthenticationController {
             @ApiResponse(responseCode = "400", description = "Username or password missing"),
             @ApiResponse(responseCode = "401", description = "Credentials do not match")
     })
-    @PostMapping
+    @PostMapping("/login")
     public ResponseEntity<Void> login(
             @NotBlank(message = "username is required") @RequestParam(name = "username") String username,
             @NotBlank(message = "password is required") @RequestParam(name = "password") String password) {
-        if (!authenticationService.matches(username, password)) {
-            throw new AuthenticationFailedException("Credentials do not match");
-        }
+        String token = authenticationService.authenticate(username, password);
+        return ResponseEntity.ok().header("Authorization", "Bearer " + token).build();
+    }
 
-        return new ResponseEntity<>(HttpStatus.OK);
+    @Operation(summary = "Logout", description = "Logs out the currently authenticated user.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Logout successful"),
+            @ApiResponse(responseCode = "401", description = "User is not authenticated")
+    })
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.replace("Bearer ", "");
+        authenticationService.logout(token);
+        return ResponseEntity.ok().build();
     }
 
     @Operation(summary = "Change password", description = "Changes the password after verifying the current (old) password.")

@@ -9,6 +9,20 @@ spring:
       hibernate:
         format_sql: true
 
+security:
+  oauth2:
+    resourceserver:
+      jwt:
+        public-key-location: classpath:certs/public.pem
+        private-key-location: classpath:certs/private.pem
+  brute-force:
+    max-attempts: 3
+    block-duration-minutes: 5
+  cors:
+    allowed-origins: "*"
+    allowed-methods: GET,POST,PUT,PATCH,DELETE,OPTIONS
+    allowed-headers: "*"
+
 management:
   endpoints:
     web:
