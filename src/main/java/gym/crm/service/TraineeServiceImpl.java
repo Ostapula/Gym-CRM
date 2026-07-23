@@ -13,6 +13,7 @@ import gym.crm.repository.TraineeRepository;
 import gym.crm.repository.TrainerRepository;
 import gym.crm.util.CredentialsGenerator;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,11 +32,12 @@ public class TraineeServiceImpl implements TraineeService {
     private final TrainerMapper trainerMapper;
     private final TrainingMapper trainingMapper;
     private final GymMetricsRecorder metricsRecorder;
+    private final PasswordEncoder passwordEncoder;
 
     public TraineeServiceImpl(TraineeRepository traineeRepository, TrainerRepository trainerRepository,
                               CredentialsGenerator credentialsGenerator, TraineeMapper traineeMapper,
                               TrainerMapper trainerMapper, TrainingMapper trainingMapper,
-                              GymMetricsRecorder metricsRecorder) {
+                              GymMetricsRecorder metricsRecorder, PasswordEncoder passwordEncoder) {
         this.traineeRepository = traineeRepository;
         this.trainerRepository = trainerRepository;
         this.credentialsGenerator = credentialsGenerator;
@@ -43,6 +45,7 @@ public class TraineeServiceImpl implements TraineeService {
         this.trainerMapper = trainerMapper;
         this.trainingMapper = trainingMapper;
         this.metricsRecorder = metricsRecorder;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -53,12 +56,15 @@ public class TraineeServiceImpl implements TraineeService {
         String password = credentialsGenerator.generatePassword();
         traineeDto.setActive(true);
         traineeDto.setUsername(username);
-        traineeDto.setPassword(password);
+        String encodedPassword = passwordEncoder.encode(password);
+        traineeDto.setPassword(encodedPassword);
         log.info("Creating trainee profile username={}", username);
         Trainee trainee = traineeMapper.toEntity(traineeDto);
         Trainee created = traineeRepository.create(trainee);
         metricsRecorder.recordTraineeRegistered();
-        return traineeMapper.toDto(created);
+        TraineeDto result = traineeMapper.toDto(created);
+        result.setPassword(password);
+        return result;
     }
 
     @Override
@@ -66,7 +72,7 @@ public class TraineeServiceImpl implements TraineeService {
     public boolean credentialsMatchTrainee(String username, String password) {
         Optional<Trainee> traineeOpt = traineeRepository.findByUsername(username);
         if (traineeOpt.isPresent()) {
-            return traineeOpt.get().getPassword().equals(password);
+            return passwordEncoder.matches(password, traineeOpt.get().getPassword());
         }
         log.info("Credentials do not match trainee username={}", username);
         return false;
@@ -101,7 +107,7 @@ public class TraineeServiceImpl implements TraineeService {
             throw new AuthenticationFailedException("Authentication failed for trainee username=" + username);
         }
         log.info("Changing password for trainee username={}", username);
-        Trainee trainee = traineeRepository.changePassword(username, newPassword);
+        Trainee trainee = traineeRepository.changePassword(username, passwordEncoder.encode(newPassword));
         return traineeMapper.toDto(trainee);
     }
 

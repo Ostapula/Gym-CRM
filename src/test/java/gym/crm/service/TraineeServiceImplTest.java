@@ -1,20 +1,11 @@
 package gym.crm.service;
 
-import gym.crm.dto.TraineeDto;
-import gym.crm.dto.TraineeMapper;
-import gym.crm.dto.TrainerMapper;
-import gym.crm.dto.TrainerSummaryDto;
-import gym.crm.dto.TrainingDto;
-import gym.crm.dto.TrainingMapper;
+import gym.crm.dto.*;
 import gym.crm.exception.AuthenticationFailedException;
 import gym.crm.exception.EntityNotFoundException;
 import gym.crm.exception.ProfileStatusException;
 import gym.crm.exception.ValidationException;
-import gym.crm.model.Trainee;
-import gym.crm.model.Trainer;
-import gym.crm.model.Training;
-import gym.crm.model.TrainingType;
-import gym.crm.model.TrainingTypeEntity;
+import gym.crm.model.*;
 import gym.crm.repository.TraineeRepository;
 import gym.crm.repository.TrainerRepository;
 import gym.crm.util.CredentialsGenerator;
@@ -26,6 +17,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -33,9 +25,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -54,6 +44,8 @@ class TraineeServiceImplTest {
     private TrainingMapper trainingMapper = Mappers.getMapper(TrainingMapper.class);
     @Mock
     private gym.crm.metrics.GymMetricsRecorder metricsRecorder;
+    @Mock
+    private PasswordEncoder passwordEncoder;
     @InjectMocks
     private TraineeServiceImpl service;
 
@@ -76,6 +68,7 @@ class TraineeServiceImplTest {
         TraineeDto input = traineeDto(null, null);
         when(credentialsGenerator.generateUsername(eq("John"), eq("Doe"), any())).thenReturn("John.Doe");
         when(credentialsGenerator.generatePassword()).thenReturn("genpass123");
+        when(passwordEncoder.encode("genpass123")).thenReturn("encoded-genpass123");
         when(traineeRepository.create(any(Trainee.class))).thenAnswer(i -> i.getArgument(0));
 
         TraineeDto result = service.createTraineeProfile(input);
@@ -86,7 +79,7 @@ class TraineeServiceImplTest {
         verify(traineeRepository).create(captor.capture());
         Trainee persisted = captor.getValue();
         assertEquals("John.Doe", persisted.getUsername());
-        assertEquals("genpass123", persisted.getPassword());
+        assertEquals("encoded-genpass123", persisted.getPassword());
         assertEquals("John", persisted.getFirstName());
         assertTrue(persisted.isActive());
     }
@@ -102,6 +95,7 @@ class TraineeServiceImplTest {
     @Test
     void credentialsMatchTrueWhenPasswordMatches() {
         when(traineeRepository.findByUsername("John.Doe")).thenReturn(Optional.of(trainee("John.Doe", "pass", true)));
+        when(passwordEncoder.matches("pass", "pass")).thenReturn(true);
         assertTrue(service.credentialsMatchTrainee("John.Doe", "pass"));
     }
 
@@ -151,6 +145,8 @@ class TraineeServiceImplTest {
     @Test
     void changePasswordAuthenticatesWithOldAndStoresNew() {
         when(traineeRepository.findByUsername("John.Doe")).thenReturn(Optional.of(trainee("John.Doe", "old", true)));
+        when(passwordEncoder.matches("old", "old")).thenReturn(true);
+        when(passwordEncoder.encode("new")).thenReturn("new");
         when(traineeRepository.changePassword("John.Doe", "new")).thenReturn(trainee("John.Doe", "new", true));
 
         TraineeDto result = service.changePasswordTrainee("John.Doe", "old", "new");

@@ -4,6 +4,7 @@ import gym.crm.dto.ErrorMessage;
 import gym.crm.exception.AuthenticationFailedException;
 import gym.crm.exception.EntityNotFoundException;
 import gym.crm.exception.ProfileStatusException;
+import gym.crm.exception.UserBlockedException;
 import gym.crm.exception.ValidationException;
 import gym.crm.logging.TransactionContext;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +37,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ValidationException.class)
     public ResponseEntity<ErrorMessage> handleValidation(ValidationException ex) {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ex);
+    }
+
+    @ExceptionHandler(UserBlockedException.class)
+    public ResponseEntity<ErrorMessage> handleUserBlocked(UserBlockedException ex) {
+        return buildErrorResponse(HttpStatus.TOO_MANY_REQUESTS, ex);
     }
 
     @ExceptionHandler(ProfileStatusException.class)
